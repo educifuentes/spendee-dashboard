@@ -31,6 +31,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.sidebar.title("Navigation")
+
 # Load data from Supabase
 df = load_transactions()
 
