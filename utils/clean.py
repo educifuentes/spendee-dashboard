@@ -1,8 +1,9 @@
 """
 Data cleaning module for Spendee transaction exports.
 """
-import pandas as pd
+import hashlib
 import json
+import pandas as pd
 from pathlib import Path
 
 
@@ -47,11 +48,43 @@ def clean_transactions(input_path, output_path):
     if "author" in df.columns:
         df = df.drop(columns=["author"])
     
+    # Add record hash for duplicate detection
+    df = add_record_hash(df)
+    
     # Save cleaned data
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
     
+    return df
+
+def _stable_str(x) -> str:
+    if pd.isna(x):
+        return ""
+    return str(x).strip()
+
+def add_record_hash(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a deterministic hash from the transaction content.
+    This prevents duplicates even when multiple rows share the same date.
+    """
+    def row_hash(r) -> str:
+        parts = [
+            _stable_str(r["date"]),
+            _stable_str(r["wallet"]),
+            _stable_str(r["type"]),
+            _stable_str(r["category"]),
+            _stable_str(r["amount"]),
+            _stable_str(r["currency"]),
+            _stable_str(r.get("note", "")),
+            _stable_str(r.get("labels", "")),
+            _stable_str(r["budget"]),
+        ]
+        payload = "|".join(parts).encode("utf-8")
+        return hashlib.sha256(payload).hexdigest()
+
+    df = df.copy()
+    df["record_hash"] = df.apply(row_hash, axis=1)
     return df
 
 
