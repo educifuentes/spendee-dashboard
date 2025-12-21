@@ -133,10 +133,10 @@ if selected_labels:
     filtered_df = filter_by_label(filtered_df, selected_labels)
 
 # Main content
-st.title("💰 Spendee Expense Dashboard")
+st.title(":material/paid: Spendee Expense Dashboard")
 
-# KPI Panel
-st.header("Key Performance Indicators")
+
+# KPIs ------------------------------------------------------------
 
 col1, col2 = st.columns(2)
 
@@ -161,8 +161,9 @@ col2.metric(
     f"${last_month_total:,.0f}"
 )
 
-# Charts section
-st.header("Visualizations")
+# Charts ------------------------------------------------------------
+
+st.title(f"{selected_period_label} ")
 
 # Chart 1: Expenses by Category (Selected Period)
 st.subheader("Expenses by Category (Selected Period)")
