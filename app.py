@@ -14,7 +14,8 @@ from utils.transforms import (
     get_last_month_expenses,
     get_expenses_by_category,
     get_expenses_by_month,
-    get_top_transactions
+    get_top_transactions,
+    get_available_periods
 )
 from utils.charts import (
     chart_expenses_by_category,
@@ -49,39 +50,6 @@ granularity = st.sidebar.selectbox(
     options=["Month", "Week", "Year"],
     index=0
 )
-
-# Get available periods based on granularity
-def get_available_periods(df, period_type):
-    """Get available periods from dataframe, formatted and sorted chronologically."""
-    df_copy = df.copy()
-    
-    if period_type == "Month":
-        # Group by year-month, format as "Month Year"
-        df_copy["period_key"] = df_copy["date"].dt.to_period("M")
-        periods = df_copy.groupby("period_key")["date"].first().reset_index()
-        periods["period_label"] = periods["period_key"].apply(lambda p: p.strftime("%B %Y"))
-        periods["period_value"] = periods["period_key"].astype(str)
-    elif period_type == "Week":
-        # Group by ISO week, get Monday of the week, format as "Month Day, Year"
-        df_copy["year"] = df_copy["date"].dt.isocalendar().year
-        df_copy["week"] = df_copy["date"].dt.isocalendar().week
-        df_copy["period_key"] = df_copy["year"].astype(str) + "-W" + df_copy["week"].astype(str).str.zfill(2)
-        
-        # Calculate Monday of each week
-        periods = df_copy.groupby("period_key")["date"].first().reset_index()
-        periods["monday"] = periods["date"].apply(lambda d: d - pd.Timedelta(days=d.weekday()))
-        # Format as "Month Day, Year" (handle day without leading zero)
-        periods["period_label"] = periods["monday"].apply(lambda d: f"{d.strftime('%B')} {d.day}, {d.year}")
-        periods["period_value"] = periods["period_key"]
-    else:  # Year
-        df_copy["period_key"] = df_copy["date"].dt.year
-        periods = df_copy.groupby("period_key")["date"].first().reset_index()
-        periods["period_label"] = periods["period_key"].astype(str)
-        periods["period_value"] = periods["period_key"].astype(str)
-    
-    # Sort chronologically by date
-    periods = periods.sort_values("date")
-    return periods[["period_label", "period_value"]].to_dict("records")
 
 # Get available periods
 available_periods = get_available_periods(df, granularity)
