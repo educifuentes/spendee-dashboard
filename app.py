@@ -18,7 +18,7 @@ from utils.transforms import (
 )
 from utils.charts import (
     chart_expenses_by_category,
-    chart_expenses_by_month,
+    chart_expenses_by_period,
     chart_top_transactions
 )
 
@@ -143,14 +143,14 @@ if not category_data.empty:
 else:
     st.info("No data available for the selected period and filters.")
 
-# Chart 2: Expenses by Month (Current Year)
-st.subheader("Expenses by Month (Current Year)")
-monthly_data = get_expenses_by_month(df, year=now.year)
-if not monthly_data.empty:
-    chart2 = chart_expenses_by_month(monthly_data)
+# Chart 2: Expenses by Period (Selected Period)
+st.subheader(f"Expenses by {granularity} (Selected Period)")
+period_data = filtered_df.copy()
+if not period_data.empty:
+    chart2 = chart_expenses_by_period(period_data, period=granularity)
     st.altair_chart(chart2, use_container_width=True)
 else:
-    st.info("No data available for the current year.")
+    st.info("No data available for the selected period.")
 
 # Chart 3: Top 10 Transactions (Current Month)
 st.subheader("Top 10 Transactions (Current Month)")

@@ -54,26 +54,47 @@ def chart_expenses_by_category(df):
     return chart
 
 
-def chart_expenses_by_month(df):
+def chart_expenses_by_period(df, period="Month"):
     """
-    Create vertical bar chart for expenses by month.
+    Create vertical bar chart for expenses by period (Month or Week).
     
     Args:
-        df: DataFrame with 'month_name' and 'amount' columns
+        df: DataFrame with 'date' and 'amount' columns
+        period: "Month" or "Week"
     """
+    df = df.copy()
+    
+    if period == "Month":
+        # Format as YYYY-MM
+        df["period"] = df["date"].dt.strftime("%Y-%m")
+        title = "Expenses by Month"
+        x_title = "Month"
+    elif period == "Week":
+        # Format as YYYY-WXX (ISO week number)
+        df["period"] = df["date"].dt.strftime("%Y-W%V")
+        title = "Expenses by Week"
+        x_title = "Week"
+    else:
+        # Default to month
+        df["period"] = df["date"].dt.strftime("%Y-%m")
+        title = "Expenses by Month"
+        x_title = "Month"
+    
+    # Aggregate by period
+    period_data = df.groupby("period")["amount"].sum().reset_index().sort_values("period")
+    
     chart = (
-        alt.Chart(df)
+        alt.Chart(period_data)
         .mark_bar()
         .encode(
-            x=alt.X("month_name:N", title="Month", sort="x"),
+            x=alt.X("period:N", title=x_title, sort="x"),
             y=alt.Y("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
-            color=alt.Color("amount:Q", scale=alt.Scale(scheme="blues"), legend=None),
-            tooltip=["month_name", alt.Tooltip("amount:Q", format="~s", title="Amount")]
+            tooltip=["period", alt.Tooltip("amount:Q", format="~s", title="Amount")]
         )
         .properties(
             width="container",
             height=400,
-            title="Expenses by Month (Current Year)"
+            title=title
         )
     )
     return chart
@@ -84,7 +105,7 @@ def chart_top_transactions(df):
     Create horizontal bar chart for top transactions.
     
     Args:
-        df: DataFrame with transaction details including 'category' and 'amount'
+        df: DataFrame with transaction details including 'category' and 'note'
     """
     # Create a label for the bars (category + note if available)
     df = df.copy()
