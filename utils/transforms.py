@@ -113,6 +113,41 @@ def get_top_transactions(df, n=10, year=None, month=None):
     return top
 
 
+def get_top_expenses_by_label(df, n=10, year=None, month=None):
+    """Get top N expenses aggregated by label for a given month (default: current month)."""
+    if year is None:
+        year = datetime.now().year
+    if month is None:
+        month = datetime.now().month
+    
+    filtered = df[(df["date"].dt.year == year) & (df["date"].dt.month == month)].copy()
+    
+    # Expand labels (split comma-separated labels) and preserve category
+    label_expanded = []
+    for _, row in filtered.iterrows():
+        if pd.notna(row["labels"]) and row["labels"]:
+            labels_list = [l.strip() for l in str(row["labels"]).split(",")]
+            for label in labels_list:
+                label_expanded.append({
+                    "label": label,
+                    "amount": row["amount"],
+                    "category": row["category"]
+                })
+    
+    if not label_expanded:
+        return pd.DataFrame(columns=["label", "amount", "category"])
+    
+    # Group by label, sum amounts, and get most common category
+    label_df = pd.DataFrame(label_expanded)
+    label_totals = label_df.groupby("label").agg({
+        "amount": "sum",
+        "category": lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else x.iloc[0]  # Most common category
+    }).reset_index()
+    label_totals = label_totals.sort_values("amount", ascending=False).head(n)
+    label_totals = label_totals.sort_values("amount", ascending=True)  # For horizontal bar chart
+    return label_totals
+
+
 def get_available_periods(df, period_type):
     """Get available periods from dataframe, formatted and sorted chronologically."""
     df_copy = df.copy()

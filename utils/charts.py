@@ -135,3 +135,78 @@ def chart_top_transactions(df):
     )
     return chart
 
+
+def chart_top_expenses_by_label(df):
+    """
+    Create horizontal bar chart for top expenses by label.
+    
+    Args:
+        df: DataFrame with 'label', 'amount', and 'category' columns
+    """
+    df = df.copy()
+    
+    # Format amount for text label
+    df["amount_text"] = df["amount"].apply(lambda x: f"${x:,.0f}")
+    
+    # Load category colors
+    category_colors = load_category_colors()
+    
+    # Get unique categories in the dataframe
+    categories = df["category"].unique().tolist() if "category" in df.columns else []
+    
+    # Create domain and range for color scale
+    domain = categories
+    range_colors = [category_colors.get(cat, "#808080") for cat in categories]  # Default to gray if not found
+    
+    # Base chart with bars
+    encode_dict = {
+        "x": alt.X("amount:Q", title="", axis=None),
+        "y": alt.Y("label:N", title="Label", sort="-x"),
+        "tooltip": [
+            "label",
+            alt.Tooltip("amount:Q", format="~s", title="Amount"),
+            "category"
+        ]
+    }
+    
+    # Add color encoding if category column exists
+    if "category" in df.columns and domain:
+        encode_dict["color"] = alt.Color(
+            "category:N",
+            scale=alt.Scale(domain=domain, range=range_colors),
+            legend=alt.Legend(title="Category")
+        )
+    else:
+        encode_dict["color"] = alt.value("#808080")
+        encode_dict["tooltip"] = [
+            "label",
+            alt.Tooltip("amount:Q", format="~s", title="Amount")
+        ]
+    
+    bars = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(**encode_dict)
+    )
+    
+    # Text labels at the end of bars
+    text = (
+        alt.Chart(df)
+        .mark_text(align="left", baseline="middle", dx=3)
+        .encode(
+            x=alt.X("amount:Q", title=""),
+            y=alt.Y("label:N", sort="-x"),
+            text="amount_text:N"
+        )
+    )
+    
+    chart = (
+        (bars + text)
+        .properties(
+            width="container",
+            height=400,
+            title="Expenses by Label"
+        )
+    )
+    return chart
+

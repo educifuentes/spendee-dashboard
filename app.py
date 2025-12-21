@@ -15,12 +15,14 @@ from utils.transforms import (
     get_expenses_by_category,
     get_expenses_by_month,
     get_top_transactions,
+    get_top_expenses_by_label,
     get_available_periods
 )
 from utils.charts import (
     chart_expenses_by_category,
     chart_expenses_by_period,
-    chart_top_transactions
+    chart_top_transactions,
+    chart_top_expenses_by_label
 )
 
 
@@ -165,7 +167,7 @@ col2.metric(
 
 st.title(f"{selected_period_label} ")
 
-# Chart 1: Expenses by Category (Selected Period)
+# Chart 1: Expenses by Category
 
 category_data = get_expenses_by_category(filtered_df, pd.Timestamp(start_date), pd.Timestamp(end_date))
 if not category_data.empty:
@@ -174,13 +176,22 @@ if not category_data.empty:
 else:
     st.info("No data available for the selected period and filters.")
 
-# Chart 2: Top 10 Transactions (Current Month)
-st.subheader("Top 10 Transactions (Current Month)")
+# Chart 2: Top 10 Transactions 
+
 top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
 if not top_transactions.empty:
     chart3 = chart_top_transactions(top_transactions)
     st.altair_chart(chart3, use_container_width=True)
 else:
     st.info("No transactions available for the current month.")
+
+# Chart 3: Top Expenses by Label
+
+top_labels = get_top_expenses_by_label(df, n=10, year=now.year, month=now.month)
+if not top_labels.empty:
+    chart4 = chart_top_expenses_by_label(top_labels)
+    st.altair_chart(chart4, use_container_width=True)
+else:
+    st.info("No expenses with labels available for the current month.")
 
 
