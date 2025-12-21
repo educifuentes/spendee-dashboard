@@ -25,8 +25,8 @@ from utils.charts import (
 
 # Page configuration
 st.set_page_config(
-    page_title="Spendee Dashboard",
-    page_icon="💰",
+    page_title="Spendee Dashboard :material/paid:",
+    page_icon=":material/paid:",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -39,39 +39,101 @@ df = load_transactions()
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Date range filter (default: current month)
 now = datetime.now()
-current_month_start = datetime(now.year, now.month, 1)
-current_month_end = now
 
-# Get date range from dataframe
-min_date = df["date"].min().date()
-max_date = df["date"].max().date()
+# Filters
 
-# Ensure default dates don't exceed dataframe range
-default_start = min(max(current_month_start.date(), min_date), max_date)
-default_end = min(max(current_month_end.date(), min_date), max_date)
-
-start_date = st.sidebar.date_input(
-    "Start Date",
-    value=default_start,
-    min_value=min_date,
-    max_value=max_date
-)
-
-end_date = st.sidebar.date_input(
-    "End Date",
-    value=default_end,
-    min_value=min_date,
-    max_value=max_date
-)
-
-# Granularity selector
+# Period selector
 granularity = st.sidebar.selectbox(
-    "Granularity",
+    "Period",
     options=["Month", "Week", "Year"],
     index=0
 )
+
+# Get available periods based on granularity
+def get_available_periods(df, period_type):
+    """Get available periods from dataframe, formatted and sorted chronologically."""
+    df_copy = df.copy()
+    
+    if period_type == "Month":
+        # Group by year-month, format as "Month Year"
+        df_copy["period_key"] = df_copy["date"].dt.to_period("M")
+        periods = df_copy.groupby("period_key")["date"].first().reset_index()
+        periods["period_label"] = periods["period_key"].apply(lambda p: p.strftime("%B %Y"))
+        periods["period_value"] = periods["period_key"].astype(str)
+    elif period_type == "Week":
+        # Group by ISO week, get Monday of the week, format as "Month Day, Year"
+        df_copy["year"] = df_copy["date"].dt.isocalendar().year
+        df_copy["week"] = df_copy["date"].dt.isocalendar().week
+        df_copy["period_key"] = df_copy["year"].astype(str) + "-W" + df_copy["week"].astype(str).str.zfill(2)
+        
+        # Calculate Monday of each week
+        periods = df_copy.groupby("period_key")["date"].first().reset_index()
+        periods["monday"] = periods["date"].apply(lambda d: d - pd.Timedelta(days=d.weekday()))
+        # Format as "Month Day, Year" (handle day without leading zero)
+        periods["period_label"] = periods["monday"].apply(lambda d: f"{d.strftime('%B')} {d.day}, {d.year}")
+        periods["period_value"] = periods["period_key"]
+    else:  # Year
+        df_copy["period_key"] = df_copy["date"].dt.year
+        periods = df_copy.groupby("period_key")["date"].first().reset_index()
+        periods["period_label"] = periods["period_key"].astype(str)
+        periods["period_value"] = periods["period_key"].astype(str)
+    
+    # Sort chronologically by date
+    periods = periods.sort_values("date")
+    return periods[["period_label", "period_value"]].to_dict("records")
+
+# Get available periods
+available_periods = get_available_periods(df, granularity)
+period_options = [p["period_label"] for p in available_periods]
+period_values = {p["period_label"]: p["period_value"] for p in available_periods}
+
+# Default to current month
+if granularity == "Month" and period_options:
+    current_period_label = datetime.now().strftime("%B %Y")
+    default_index = period_options.index(current_period_label) if current_period_label in period_options else len(period_options) - 1
+elif period_options:
+    default_index = len(period_options) - 1
+else:
+    default_index = 0
+
+# Period selector
+selected_period_label = st.sidebar.selectbox(
+    granularity,
+    options=period_options,
+    index=default_index
+)
+
+# Calculate start and end dates from selected period
+selected_period_value = period_values[selected_period_label]
+
+if granularity == "Month":
+    # Parse YYYY-MM format
+    year, month = map(int, selected_period_value.split("-"))
+    start_date = pd.Timestamp(year=year, month=month, day=1)
+    # Get last day of month
+    if month == 12:
+        end_date = pd.Timestamp(year=year+1, month=1, day=1) - pd.Timedelta(days=1)
+    else:
+        end_date = pd.Timestamp(year=year, month=month+1, day=1) - pd.Timedelta(days=1)
+    end_date = end_date.replace(hour=23, minute=59, second=59)
+elif granularity == "Week":
+    # Parse YYYY-WXX format, get Monday and Sunday of that week
+    year, week = selected_period_value.split("-W")
+    year, week = int(year), int(week)
+    # Get Monday of the week
+    start_date = pd.Timestamp.fromisocalendar(year, week, 1)
+    end_date = start_date + pd.Timedelta(days=6, hours=23, minutes=59, seconds=59)
+else:  # Year
+    year = int(selected_period_value)
+    start_date = pd.Timestamp(year=year, month=1, day=1)
+    end_date = pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
+
+# Convert to date objects for filtering
+start_date = start_date.date()
+end_date = end_date.date()
+
+
 
 # Category filter
 all_categories = sorted(df["category"].unique())
