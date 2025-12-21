@@ -1,8 +1,18 @@
 """
 Altair chart definitions for the dashboard.
 """
+import json
+from pathlib import Path
+
 import altair as alt
 import pandas as pd
+
+
+def load_category_colors():
+    """Load category color mappings from JSON file."""
+    colors_path = Path(__file__).parent.parent / "constants" / "category_color.json"
+    with open(colors_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def chart_expenses_by_category(df):
@@ -12,13 +22,27 @@ def chart_expenses_by_category(df):
     Args:
         df: DataFrame with 'category' and 'amount' columns
     """
+    # Load category colors
+    category_colors = load_category_colors()
+    
+    # Get unique categories in the dataframe
+    categories = df["category"].unique().tolist()
+    
+    # Create domain and range for color scale
+    domain = categories
+    range_colors = [category_colors.get(cat, "#808080") for cat in categories]  # Default to gray if not found
+    
     chart = (
         alt.Chart(df)
         .mark_bar()
         .encode(
             x=alt.X("category:N", title="Category", sort="-y"),
             y=alt.Y("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
-            color=alt.Color("category:N", legend=None),
+            color=alt.Color(
+                "category:N",
+                scale=alt.Scale(domain=domain, range=range_colors),
+                legend=None
+            ),
             tooltip=["category", alt.Tooltip("amount:Q", format="~s", title="Amount")]
         )
         .properties(
