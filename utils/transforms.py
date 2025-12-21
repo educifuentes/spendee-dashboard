@@ -176,7 +176,7 @@ def get_available_periods(df, period_type):
         periods["period_label"] = periods["period_key"].astype(str)
         periods["period_value"] = periods["period_key"].astype(str)
     
-    # Sort chronologically by date
-    periods = periods.sort_values("date")
+    # Sort chronologically by date (descending - most recent first)
+    periods = periods.sort_values("date", ascending=False)
     return periods[["period_label", "period_value"]].to_dict("records")
 

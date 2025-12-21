@@ -34,6 +34,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Sidebar ------------------------------------------------------------------------------------------------
+
 st.sidebar.title("Navigation")
 
 # Load data from Supabase
@@ -126,7 +128,9 @@ selected_labels = st.sidebar.multiselect(
     default=[]
 )
 
-# Apply filters
+# ------------------------------------------------------------------------------------------------
+
+# Apply filters to dataframe
 filtered_df = df.copy()
 filtered_df = filter_by_date_range(filtered_df, pd.Timestamp(start_date), pd.Timestamp(end_date))
 if selected_categories:
