@@ -180,3 +180,33 @@ def get_available_periods(df, period_type):
     periods = periods.sort_values("date", ascending=False)
     return periods[["period_label", "period_value"]].to_dict("records")
 
+
+def get_expenses_by_budget_month(df, start_date=None, end_date=None):
+    """
+    Get expenses aggregated by budget and month.
+    Args:
+        df: DataFrame with 'date', 'amount', and 'budget' columns
+        start_date: Optional start date to filter (default: None for all data)
+        end_date: Optional end date to filter (default: None for all data)
+    Returns:
+        DataFrame with columns: 'date', 'budget', 'amount' (date column preserved for Altair)
+    """
+    filtered = df.copy()
+    
+    # Apply date filters if provided
+    if start_date is not None or end_date is not None:
+        if start_date is None:
+            start_date = filtered["date"].min()
+        if end_date is None:
+            end_date = filtered["date"].max()
+        filtered = filter_by_date_range(filtered, start_date, end_date)
+    
+    # Keep date column for Altair's month() function
+    # Group by date (will be aggregated by month in Altair) and budget
+    result = filtered.groupby([filtered["date"].dt.to_period("M"), "budget"])["amount"].sum().reset_index()
+    
+    # Convert period back to datetime (first day of month) for Altair
+    result["date"] = pd.to_datetime(result["date"].astype(str))
+    
+    return result[["date", "budget", "amount"]]
+

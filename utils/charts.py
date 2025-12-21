@@ -15,6 +15,13 @@ def load_category_colors():
         return json.load(f)
 
 
+def load_budget_colors():
+    """Load budget color mappings from JSON file."""
+    colors_path = Path(__file__).parent.parent / "constants" / "budget_colors.json"
+    with open(colors_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def chart_expenses_by_category(df):
     """
     Create vertical bar chart for expenses by category.
@@ -203,10 +210,68 @@ def chart_top_expenses_by_label(df):
     chart = (
         (bars + text)
         .properties(
+                width="container",
+                height=400,
+                title="Expenses by Label"
+            )
+        )
+
+
+def chart_expenses_by_budget_month(df):
+    """
+    Create stacked bar chart for expenses by budget and month.
+    Budgets are ordered: "Gastos fijos" first, then "Chao culpa", then others.
+    Args:
+        df: DataFrame with 'date', 'budget', and 'amount' columns
+    """
+    df = df.copy()
+    
+    # Load budget colors
+    budget_colors = load_budget_colors()
+    
+    # Define budget order: "Gastos fijos" first, then "Chao culpa", then others
+    budget_order = ["Gastos fijos", "Chao culpa"]
+    all_budgets = df["budget"].unique().tolist()
+    other_budgets = [b for b in all_budgets if b not in budget_order]
+    ordered_budgets = budget_order + sorted(other_budgets)
+    
+    # Create ordered categorical for budget
+    df["budget"] = pd.Categorical(df["budget"], categories=ordered_budgets, ordered=True)
+    
+    # Sort by date and budget
+    df = df.sort_values(["date", "budget"])
+    
+    # Build color scale domain and range from budget colors
+    domain = ordered_budgets
+    range_colors = [budget_colors.get(budget, "#808080") for budget in ordered_budgets]
+    
+    chart = (
+        alt.Chart(df)
+        .mark_bar(
+            cornerRadiusTopLeft=3,
+            cornerRadiusTopRight=3
+        )
+        .encode(
+            x=alt.X("month(date):O", title="Month"),
+            y=alt.Y("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
+            color=alt.Color(
+                "budget:N",
+                title="Budget",
+                scale=alt.Scale(domain=domain, range=range_colors),
+                sort=ordered_budgets
+            ),
+            tooltip=[
+                alt.Tooltip("month(date):O", title="Month"),
+                "budget",
+                alt.Tooltip("amount:Q", format="~s", title="Amount")
+            ]
+        )
+        .properties(
             width="container",
             height=400,
-            title="Expenses by Label"
+            title="Expenses by Budget and Month"
         )
     )
+    
     return chart
 
