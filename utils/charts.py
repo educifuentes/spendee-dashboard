@@ -48,7 +48,7 @@ def chart_expenses_by_category(df):
         .properties(
             width="container",
             height=400,
-            title="Expenses by Category (Selected Period)"
+            title="Expenses by Category"
         )
     )
     return chart
@@ -130,7 +130,7 @@ def chart_top_transactions(df):
         .properties(
             width="container",
             height=400,
-            title="Top 10 Transactions (Current Month)"
+            title="Top 10 Transactions"
         )
     )
     return chart

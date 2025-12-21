@@ -166,7 +166,7 @@ col2.metric(
 st.title(f"{selected_period_label} ")
 
 # Chart 1: Expenses by Category (Selected Period)
-st.subheader("Expenses by Category (Selected Period)")
+
 category_data = get_expenses_by_category(filtered_df, pd.Timestamp(start_date), pd.Timestamp(end_date))
 if not category_data.empty:
     chart1 = chart_expenses_by_category(category_data)
@@ -174,16 +174,7 @@ if not category_data.empty:
 else:
     st.info("No data available for the selected period and filters.")
 
-# Chart 2: Expenses by Period (Selected Period)
-st.subheader(f"Expenses by {granularity} (Selected Period)")
-period_data = filtered_df.copy()
-if not period_data.empty:
-    chart2 = chart_expenses_by_period(period_data, period=granularity)
-    st.altair_chart(chart2, use_container_width=True)
-else:
-    st.info("No data available for the selected period.")
-
-# Chart 3: Top 10 Transactions (Current Month)
+# Chart 2: Top 10 Transactions (Current Month)
 st.subheader("Top 10 Transactions (Current Month)")
 top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
 if not top_transactions.empty:
@@ -191,4 +182,5 @@ if not top_transactions.empty:
     st.altair_chart(chart3, use_container_width=True)
 else:
     st.info("No transactions available for the current month.")
+
 
