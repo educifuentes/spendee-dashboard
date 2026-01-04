@@ -16,7 +16,8 @@ from utils.transforms import (
     get_expenses_by_month,
     get_top_transactions,
     get_top_expenses_by_label,
-    get_available_periods
+    get_available_periods,
+    get_period_dates
 )
 from utils.charts import (
     chart_expenses_by_category,
@@ -26,7 +27,9 @@ from utils.charts import (
 )
 
 
-# Page configuration
+# ==========================================
+# Page Configuration
+# ==========================================
 st.set_page_config(
     page_title="Spendee Dashboard :material/paid:",
     page_icon=":material/paid:",
@@ -34,8 +37,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Sidebar ------------------------------------------------------------------------------------------------
-
+# ==========================================
+# Sidebar & Data Loading
+# ==========================================
 st.sidebar.title("Navigation")
 
 # Load data from Supabase
@@ -65,13 +69,15 @@ selected_labels = st.sidebar.multiselect(
     default=[]
 )
 
-# ------------------------------------------------------------------------------------------------
-
-# Main content
+# ==========================================
+# Main Dashboard Layout
+# ==========================================
 st.title(":material/paid: Spendee Expense Dashboard")
 
 
-# KPIs ------------------------------------------------------------
+# ------------------------------------------
+# 1. Key Performance Indicators (KPIs)
+# ------------------------------------------
 
 col1, col2 = st.columns(2)
 
@@ -96,7 +102,9 @@ col2.metric(
     f"${last_month_total:,.0f}"
 )
 
-# Charts ------------------------------------------------------------
+# ------------------------------------------
+# 2. Period Selection Logic
+# ------------------------------------------
 
 # Period selector filters - calculate period options first
 granularity_key = "granularity"
@@ -126,7 +134,9 @@ else:
 st.title(f"{st.session_state[selected_period_key]} ")
 
 # Period selector filters UI
-col1, col2 = st.columns(2)
+col1, col2,col3 = st.columns(3)
+
+wallet_options = ["All"] + sorted(df["wallet"].unique().tolist())
 
 with col1:
     granularity = st.selectbox(
@@ -143,45 +153,48 @@ with col2:
         index=default_index,
         key=selected_period_key
     )
+with col3:
+    selected_wallet = st.selectbox(
+        "Wallet",
+        options= wallet_options,
+        index=0,
+    )
 
 # Recalculate start and end dates from selected period
 selected_period_value = period_values[selected_period_label]
 
-if granularity == "Month":
-    # Parse YYYY-MM format
-    year, month = map(int, selected_period_value.split("-"))
-    start_date = pd.Timestamp(year=year, month=month, day=1)
-    # Get last day of month
-    if month == 12:
-        end_date = pd.Timestamp(year=year+1, month=1, day=1) - pd.Timedelta(days=1)
-    else:
-        end_date = pd.Timestamp(year=year, month=month+1, day=1) - pd.Timedelta(days=1)
-    end_date = end_date.replace(hour=23, minute=59, second=59)
-elif granularity == "Week":
-    # Parse YYYY-WXX format, get Monday and Sunday of that week
-    year, week = selected_period_value.split("-W")
-    year, week = int(year), int(week)
-    # Get Monday of the week
-    start_date = pd.Timestamp.fromisocalendar(year, week, 1)
-    end_date = start_date + pd.Timedelta(days=6, hours=23, minutes=59, seconds=59)
-else:  # Year
-    year = int(selected_period_value)
-    start_date = pd.Timestamp(year=year, month=1, day=1)
-    end_date = pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
+start_date, end_date = get_period_dates(granularity, selected_period_value)
 
-# Convert to date objects for filtering
-start_date = start_date.date()
-end_date = end_date.date()
+# ------------------------------------------
+# 3. Data Filtering
+# ------------------------------------------
 
 # Re-apply filters to dataframe with updated dates
 filtered_df = df.copy()
-filtered_df = filter_by_date_range(filtered_df, pd.Timestamp(start_date), pd.Timestamp(end_date))
 if selected_categories:
     filtered_df = filter_by_category(filtered_df, selected_categories)
 if selected_labels:
     filtered_df = filter_by_label(filtered_df, selected_labels)
 
+# ------------------------------------------
+# 4. Visualizations
+# ------------------------------------------
+
 # Chart 1: Expenses by Category
+
+tab1, tab2, tab3, tab4 = st.tabs(wallet_options)
+with tab1:
+    filtered_df = filter_by_date_range(df, pd.Timestamp(start_date), pd.Timestamp(end_date))
+    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)
+with tab2:
+    filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[1]], pd.Timestamp(start_date), pd.Timestamp(end_date))
+    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)
+with tab3:
+    filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[2]], pd.Timestamp(start_date), pd.Timestamp(end_date))
+    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)  
+with tab4:
+    filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[3]], pd.Timestamp(start_date), pd.Timestamp(end_date))
+    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)
 
 category_data = get_expenses_by_category(filtered_df, pd.Timestamp(start_date), pd.Timestamp(end_date))
 if not category_data.empty:
@@ -207,5 +220,3 @@ if not top_labels.empty:
     st.altair_chart(chart4, use_container_width=True)
 else:
     st.info("No expenses with labels available for the current month.")
-
-

@@ -29,11 +29,24 @@ def load_transactions() -> pd.DataFrame:
     """
     supabase = get_supabase()
     
-    # Query transactions table, ordered by date
-    response = supabase.table("transactions").select("*").order("date").execute()
+    # Query transactions table with pagination (Supabase limits to 1000 rows by default)
+    all_rows = []
+    start = 0
+    batch_size = 1000
+    while True:
+        response = supabase.table("transactions").select("*").range(start, start + batch_size - 1).execute()
+        rows = response.data
+        all_rows.extend(rows)
+        if len(rows) < batch_size:
+            break
+        start += batch_size
     
     # Convert to pandas DataFrame
-    df = pd.DataFrame(response.data)
+    df = pd.DataFrame(all_rows)
+
+    # add log of the load with date range and number of records
+    print(f"Loaded {len(df)} transactions from Supabase.")
+    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
     
     # Ensure correct dtypes
     if "date" in df.columns:
@@ -42,4 +55,3 @@ def load_transactions() -> pd.DataFrame:
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").astype(float)
     
     return df
-

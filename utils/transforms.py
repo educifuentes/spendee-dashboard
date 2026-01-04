@@ -210,3 +210,38 @@ def get_expenses_by_budget_month(df, start_date=None, end_date=None):
     
     return result[["date", "budget", "amount"]]
 
+
+def get_period_dates(granularity, selected_period_value):
+    """
+    Calculate start and end dates based on granularity and period value.
+    
+    Args:
+        granularity: "Month", "Week", or "Year"
+        selected_period_value: String representation of the period (e.g. "2023-01", "2023-W01", "2023")
+        
+    Returns:
+        tuple: (start_date, end_date) as pandas Timestamps
+    """
+    if granularity == "Month":
+        # Parse YYYY-MM format
+        year, month = map(int, selected_period_value.split("-"))
+        start_date = pd.Timestamp(year=year, month=month, day=1)
+        # Get last day of month
+        if month == 12:
+            end_date = pd.Timestamp(year=year+1, month=1, day=1) - pd.Timedelta(days=1)
+        else:
+            end_date = pd.Timestamp(year=year, month=month+1, day=1) - pd.Timedelta(days=1)
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+    elif granularity == "Week":
+        # Parse YYYY-WXX format, get Monday and Sunday of that week
+        year, week = selected_period_value.split("-W")
+        year, week = int(year), int(week)
+        # Get Monday of the week
+        start_date = pd.Timestamp.fromisocalendar(year, week, 1)
+        end_date = start_date + pd.Timedelta(days=6, hours=23, minutes=59, seconds=59)
+    else:  # Year
+        year = int(selected_period_value)
+        start_date = pd.Timestamp(year=year, month=1, day=1)
+        end_date = pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
+        
+    return start_date, end_date
