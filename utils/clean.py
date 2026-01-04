@@ -146,6 +146,7 @@ def check_duplicates(df: pd.DataFrame):
     if not duplicates.empty:
         print(f"Found {len(duplicates)} rows with duplicate record_hash:")
         print(duplicates[["date", "wallet", "type", "category", "amount", "currency", "note", "labels", "budget"]])
+        print(f"WARNING: {len(duplicates)} duplicates found, please edit data on source app")
     else:
         print("No duplicates found based on record_hash.")
 
