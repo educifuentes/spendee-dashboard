@@ -3,6 +3,7 @@ Data cleaning module for Spendee transaction exports.
 """
 import hashlib
 import json
+from datetime import datetime
 import pandas as pd
 from pathlib import Path
 from pprint import pprint
@@ -94,6 +95,9 @@ def clean_transactions(input_path, output_path):
     # ------------------------------------------
     # 6. Export
     # ------------------------------------------
+    # Check for duplicates before saving
+    check_duplicates(df)
+
     # Save cleaned data
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -135,6 +139,43 @@ def add_record_hash(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def check_duplicates(df: pd.DataFrame):
+    """Check for duplicate record hashes and print warning if found."""
+    print(f"\nChecking for duplicates...")
+    duplicates = df[df.duplicated(subset=["record_hash"], keep=False)]
+    if not duplicates.empty:
+        print(f"Found {len(duplicates)} rows with duplicate record_hash:")
+        print(duplicates[["date", "wallet", "type", "category", "amount", "currency", "note", "labels", "budget"]])
+    else:
+        print("No duplicates found based on record_hash.")
+
+
+def log_export_stats(df: pd.DataFrame, output_path: Path):
+    """
+    Append export statistics to a log file in the logs directory.
+    """
+    log_path = Path(__file__).parent.parent / "logs" / "export_log.txt"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    rows = len(df)
+    total_amount = df["amount"].sum()
+    date_range = f"{df['date'].min().strftime('%Y-%m-%d')} to {df['date'].max().strftime('%Y-%m-%d')}" if not df.empty else "N/A"
+    
+    log_entry = (
+        f"[{timestamp}] Exported {rows} rows to {output_path.name}\n"
+        f"    - Total Amount: {total_amount:,.2f}\n"
+        f"    - Date Range: {date_range}\n"
+        f"    - Source Date: {EXPORT_DATE}\n"
+        f"--------------------------------------------------\n"
+    )
+    
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(log_entry)
+    
+    print(f"Log entry added to {log_path}")
+
+
 # ==========================================
 # Main Execution
 # ==========================================
@@ -157,3 +198,6 @@ if __name__ == "__main__":
 
     print(f"Cleaned data saved to {OUTPUT_FILE}")
     print(f"DataFrame shape: {df.shape[0]} rows, {df.shape[1]} columns")
+
+    # Log the export
+    log_export_stats(df, OUTPUT_FILE)
