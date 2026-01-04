@@ -90,7 +90,7 @@ if uploaded_file is not None:
         else:
             # Preview
             st.subheader("Preview (first 20 rows)")
-            st.dataframe(new_transactions.head(20), use_container_width=True)
+            st.dataframe(new_transactions.head(20), width='stretch')
             
             # Convert to dict for Supabase
             records = new_transactions.to_dict("records")

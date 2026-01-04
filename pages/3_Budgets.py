@@ -57,7 +57,7 @@ budget_data = get_expenses_by_budget_month(df, start_date, end_date)
 if not budget_data.empty:
     # Display chart
     chart = chart_expenses_by_budget_month(budget_data)
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
     
     # Optional: Show summary table
     with st.expander("View Summary Table"):
@@ -71,7 +71,7 @@ if not budget_data.empty:
             aggfunc="sum",
             fill_value=0
         )
-        st.dataframe(summary, use_container_width=True)
+        st.dataframe(summary, width='stretch')
 else:
     st.info("No data available for the selected period.")
 

@@ -20,6 +20,23 @@ def load_budget_colors():
     colors_path = Path(__file__).parent.parent / "constants" / "budget_colors.json"
     with open(colors_path, "r", encoding="utf-8") as f:
         return json.load(f)
+    
+def bar_chart_transactions_by_type(df, period="Month"):
+
+    if period == "Month":
+        x_axis = "month:O"
+    elif period == "Week":
+        x_axis = "week:O"
+    else:
+        x_axis = "day:O"
+
+    chart = alt.Chart(df).mark_bar().encode(
+    x=x_axis,
+    y='sum(amount):Q',
+    color=alt.Color('type:N', scale=alt.Scale(domain=['Expense', 'Income'], range=['red', 'green'])),
+    xOffset='type:N'
+)
+    return chart
 
 
 def chart_expenses_by_category(df):
@@ -50,7 +67,7 @@ def chart_expenses_by_category(df):
                 scale=alt.Scale(domain=domain, range=range_colors),
                 legend=None
             ),
-            tooltip=["category", alt.Tooltip("amount:Q", format="~s", title="Amount")]
+            tooltip=["category", alt.Tooltip("amount:Q", format="~s", title="Amount"), "note"]
         )
         .properties(
             width="container",
@@ -274,4 +291,3 @@ def chart_expenses_by_budget_month(df):
     )
     
     return chart
-

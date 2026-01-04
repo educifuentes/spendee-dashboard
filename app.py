@@ -10,7 +10,9 @@ from utils.transforms import (
     filter_by_date_range,
     filter_by_category,
     filter_by_label,
+    create_period_columns,
     get_current_month_expenses,
+    get_current_month_income,
     get_last_month_expenses,
     get_expenses_by_category,
     get_expenses_by_month,
@@ -21,6 +23,7 @@ from utils.transforms import (
 )
 from utils.charts import (
     chart_expenses_by_category,
+    bar_chart_transactions_by_type,
     chart_expenses_by_period,
     chart_top_transactions,
     chart_top_expenses_by_label
@@ -44,6 +47,7 @@ st.sidebar.title("Navigation")
 
 # Load data from Supabase
 df = load_transactions()
+df = create_period_columns(df)
 
 
 now = datetime.now()
@@ -79,7 +83,7 @@ st.title(":material/paid: Spendee Expense Dashboard")
 # 1. Key Performance Indicators (KPIs)
 # ------------------------------------------
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 # Current month expenses with percentage change
 current_month_total = get_current_month_expenses(df)
@@ -101,6 +105,12 @@ col2.metric(
     "Last Month Expenses",
     f"${last_month_total:,.0f}"
 )
+
+col3.metric(
+    "Current Month Income",
+    f"${get_current_month_income(df):,.0f}"
+)
+
 
 # ------------------------------------------
 # 2. Period Selection Logic
@@ -180,35 +190,40 @@ if selected_labels:
 # 4. Visualizations
 # ------------------------------------------
 
-# Chart 1: Expenses by Category
+# Chart 1: Expenses bar
 
-tab1, tab2, tab3, tab4 = st.tabs(wallet_options)
+tab1, tab2, tab3 = st.tabs(["Days", "Weeks", "Months"])
 with tab1:
-    filtered_df = filter_by_date_range(df, pd.Timestamp(start_date), pd.Timestamp(end_date))
-    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)
+    st.altair_chart( bar_chart_transactions_by_type(filtered_df, period="Day"), use_container_width=True)
 with tab2:
-    filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[1]], pd.Timestamp(start_date), pd.Timestamp(end_date))
-    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)
+    st.altair_chart(bar_chart_transactions_by_type(filtered_df, period="Week"), use_container_width=True)
 with tab3:
-    filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[2]], pd.Timestamp(start_date), pd.Timestamp(end_date))
-    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)  
-with tab4:
-    filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[3]], pd.Timestamp(start_date), pd.Timestamp(end_date))
-    st.altair_chart(chart_expenses_by_category(filtered_df), use_container_width=True)
+    st.altair_chart(bar_chart_transactions_by_type(filtered_df, period="Month"), use_container_width=True)
 
-category_data = get_expenses_by_category(filtered_df, pd.Timestamp(start_date), pd.Timestamp(end_date))
-if not category_data.empty:
-    chart1 = chart_expenses_by_category(category_data)
-    st.altair_chart(chart1, use_container_width=True)
-else:
-    st.info("No data available for the selected period and filters.")
+# Chart 2: Expenses by Category
+st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
+
+
+# tab1, tab2, tab3, tab4 = st.tabs([wallet_options])
+# with tab1:
+#     filtered_df = filter_by_date_range(df, pd.Timestamp(start_date), pd.Timestamp(end_date))
+#     st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
+# with tab2:
+#     filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[1]], pd.Timestamp(start_date), pd.Timestamp(end_date))
+#     st.altair_chart(chart_expenses_by_category(filtered_df), wid  th='stretch')
+# with tab3:
+#     filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[2]], pd.Timestamp(start_date), pd.Timestamp(end_date))
+#     st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')  
+# with tab4:
+#     filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[3]], pd.Timestamp(start_date), pd.Timestamp(end_date))
+#     st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
+
 
 # Chart 2: Top 10 Transactions 
 
 top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
 if not top_transactions.empty:
-    chart3 = chart_top_transactions(top_transactions)
-    st.altair_chart(chart3, use_container_width=True)
+    st.altair_chart( chart_top_transactions(top_transactions), width='stretch')
 else:
     st.info("No transactions available for the current month.")
 
@@ -217,6 +232,6 @@ else:
 top_labels = get_top_expenses_by_label(df, n=10, year=now.year, month=now.month)
 if not top_labels.empty:
     chart4 = chart_top_expenses_by_label(top_labels)
-    st.altair_chart(chart4, use_container_width=True)
+    st.altair_chart(chart4, width='stretch')
 else:
     st.info("No expenses with labels available for the current month.")

@@ -38,6 +38,16 @@ def filter_by_date_range(df, start_date, end_date):
     mask = (df_dates >= start_date) & (df_dates <= end_date)
     return df[mask].copy()
 
+def create_period_columns(df):
+    """Create day, week, month, year columns from date."""
+    df["day"] = df["date"].dt.strftime("%Y-%m-%d")
+    # Use isocalendar to correctly handle year boundaries for weeks
+    iso = df["date"].dt.isocalendar()
+    df["week"] = iso.year.astype(str) + "-W" + iso.week.astype(str).str.zfill(2)
+    df["month"] = df["date"].dt.strftime("%Y-%m")
+    df["year"] = df["date"].dt.year
+    return df
+
 
 def filter_by_category(df, categories):
     """Filter dataframe by categories."""
@@ -65,7 +75,16 @@ def get_current_month_expenses(df):
     start = datetime(now.year, now.month, 1)
     end = now
     current_month = filter_by_date_range(df, start, end)
-    return current_month["amount"].sum()
+    return current_month[current_month["type"] == "Expense"]["amount"].sum()
+
+
+def get_current_month_income(df):
+    """Get total income for current month."""
+    now = datetime.now()
+    start = datetime(now.year, now.month, 1)
+    end = now
+    current_month = filter_by_date_range(df, start, end)
+    return current_month[current_month["type"] == "Income"]["amount"].sum()
 
 
 def get_last_month_expenses(df):
@@ -79,7 +98,7 @@ def get_last_month_expenses(df):
         last_month_end = datetime(now.year, now.month, 1) - timedelta(seconds=1)
     
     last_month = filter_by_date_range(df, last_month_start, last_month_end)
-    return last_month["amount"].sum()
+    return last_month[last_month["type"] == "Expense"]["amount"].sum()
 
 
 def get_expenses_by_category(df, start_date, end_date):

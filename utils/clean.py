@@ -79,8 +79,6 @@ def clean_transactions(input_path, output_path):
     # ------------------------------------------
     # 4. Filtering & Cleanup
     # ------------------------------------------
-    # Filter to only expenses
-    df = df[df["type"].str.lower() == "expense"].copy()
     
     # Drop author column
     if "author" in df.columns:

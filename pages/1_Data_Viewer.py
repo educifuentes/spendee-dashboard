@@ -106,5 +106,5 @@ if "date" in df.columns and len(df) > 0:
 filtered_df = filter_dataframe(df)
 
 st.write(f"**Filtered transactions:** {len(filtered_df)}")
-st.dataframe(filtered_df, use_container_width=True)
+st.dataframe(filtered_df, width='stretch')
 
