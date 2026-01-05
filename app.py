@@ -11,6 +11,7 @@ from utils.transforms import (
     filter_by_category,
     filter_by_label,
     create_period_columns,
+    create_universal_amount,
     get_current_month_expenses,
     get_current_month_income,
     get_last_month_expenses,
@@ -19,7 +20,8 @@ from utils.transforms import (
     get_top_transactions,
     get_top_expenses_by_label,
     get_available_periods,
-    get_period_dates
+    get_period_dates,
+    get_period_expenses
 )
 from utils.charts import (
     chart_expenses_by_category,
@@ -47,8 +49,6 @@ st.sidebar.title("Navigation")
 
 # Load data from Supabase
 df = load_transactions()
-df = create_period_columns(df)
-
 
 now = datetime.now()
 
@@ -181,6 +181,7 @@ start_date, end_date = get_period_dates(granularity, selected_period_value)
 
 # Re-apply filters to dataframe with updated dates
 filtered_df = df.copy()
+filtered_df = filter_by_date_range(filtered_df, start_date, end_date)
 if selected_categories:
     filtered_df = filter_by_category(filtered_df, selected_categories)
 if selected_labels:
@@ -192,13 +193,15 @@ if selected_labels:
 
 # Chart 1: Expenses bar
 
-tab1, tab2, tab3 = st.tabs(["Days", "Weeks", "Months"])
-with tab1:
-    st.altair_chart( bar_chart_transactions_by_type(filtered_df, period="Day"), use_container_width=True)
-with tab2:
-    st.altair_chart(bar_chart_transactions_by_type(filtered_df, period="Week"), use_container_width=True)
-with tab3:
-    st.altair_chart(bar_chart_transactions_by_type(filtered_df, period="Month"), use_container_width=True)
+if granularity == "Month":
+    tabs_config = [("Weeks", "Week"), ("Days", "Day"), ("Months", "Month")]
+else:
+    tabs_config = [("Days", "Day"), ("Weeks", "Week"), ("Months", "Month")]
+
+tabs = st.tabs([t[0] for t in tabs_config])
+for tab, (label, period) in zip(tabs, tabs_config):
+    with tab:
+        st.altair_chart(bar_chart_transactions_by_type(filtered_df, period=period), use_container_width=True)
 
 # Chart 2: Expenses by Category
 st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
@@ -220,18 +223,19 @@ st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
 
 
 # Chart 2: Top 10 Transactions 
+st.table(get_period_expenses(filtered_df))
 
-top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
-if not top_transactions.empty:
-    st.altair_chart( chart_top_transactions(top_transactions), width='stretch')
-else:
-    st.info("No transactions available for the current month.")
+# top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
+# if not top_transactions.empty:
+#     st.altair_chart( chart_top_transactions(top_transactions), width='stretch')
+# else:
+#     st.info("No transactions available for the current month.")
 
 # Chart 3: Top Expenses by Label
 
-top_labels = get_top_expenses_by_label(df, n=10, year=now.year, month=now.month)
-if not top_labels.empty:
-    chart4 = chart_top_expenses_by_label(top_labels)
-    st.altair_chart(chart4, width='stretch')
-else:
-    st.info("No expenses with labels available for the current month.")
+# top_labels = get_top_expenses_by_label(df, n=10, year=now.year, month=now.month)
+# if not top_labels.empty:
+#     chart4 = chart_top_expenses_by_label(top_labels)
+#     st.altair_chart(chart4, width='stretch')
+# else:
+#     st.info("No expenses with labels available for the current month.")

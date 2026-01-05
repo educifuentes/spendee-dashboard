@@ -48,6 +48,26 @@ def create_period_columns(df):
     df["year"] = df["date"].dt.year
     return df
 
+def create_universal_amount(df):
+    """
+    Create amount_universal column in CLP.
+    If currency is USD, converts to CLP using approximate monthly rates.
+    """
+    if "currency" not in df.columns:
+        df["amount_universal"] = df["amount"]
+        return df
+
+    # Approximate USD to CLP rates (First day of month)
+    rates_path = Path(__file__).parent.parent / "constants" / "usd_clp_rates.csv"
+    rates_df = pd.read_csv(rates_path)
+    rates_map = dict(zip(rates_df["month"], rates_df["rate"]))
+
+    df["rate"] = df["date"].dt.strftime("%Y-%m").map(rates_map).fillna(900)
+    df["amount_universal_clp"] = df.apply(lambda x: x["amount"] * x["rate"] if x["currency"] == "USD" else x["amount"], axis=1)
+
+    # disply as clp currency
+    df["amount_universal_clp"] = df["amount_universal_clp"].apply(lambda x: f"${x:,.0f}")
+    return df.drop(columns=["rate"])
 
 def filter_by_category(df, categories):
     """Filter dataframe by categories."""
@@ -131,6 +151,20 @@ def get_top_transactions(df, n=10, year=None, month=None):
     top = top.sort_values("amount", ascending=True)  # For horizontal bar chart
     return top
 
+def get_period_expenses(df):
+    """Get expenses aggregated by category with transaction counts."""
+    # Filter for expenses
+    if "type" in df.columns:
+        df = df[df["type"] == "Expense"]
+
+    res = df.groupby("category").agg(
+        amount=("amount", "sum"),
+        count=("date", "count")
+    ).reset_index().sort_values("amount", ascending=False)
+
+    res["transaction_label"] = res["count"].astype(str) + " transactions"
+    res["amount"] = res["amount"].apply(lambda x: f"${x:,.0f}")
+    return res.set_index("category")
 
 def get_top_expenses_by_label(df, n=10, year=None, month=None):
     """Get top N expenses aggregated by label for a given month (default: current month)."""

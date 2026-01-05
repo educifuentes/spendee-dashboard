@@ -1,9 +1,10 @@
 """
-Database access functions for Supabase using Streamlit secrets.
+Database access functions for Supabase using Streamlit secrets. Loads data and ensures correct dtypes, and creates additional columns.
 """
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
+from utils.transforms import create_period_columns, create_universal_amount
 
 
 @st.cache_resource
@@ -53,5 +54,17 @@ def load_transactions() -> pd.DataFrame:
         df["date"] = pd.to_datetime(df["date"], utc=True)
     if "amount" in df.columns:
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").astype(float)
+    
+    # Create new columns
+    df = create_period_columns(df)
+    df = create_universal_amount(df)
+
+    # reorder columns
+    cols = df.columns.tolist()
+    if "amount" in cols and "amount_universal_clp" in cols:
+        cols.remove("amount_universal_clp")
+        amount_index = cols.index("currency")
+        cols.insert(amount_index + 1, "amount_universal_clp")
+        df = df[cols]
     
     return df
