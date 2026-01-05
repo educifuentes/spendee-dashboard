@@ -6,13 +6,31 @@ from pathlib import Path
 
 import altair as alt
 import pandas as pd
+from utils.transforms import get_categories_ranked_by_amount
 
 
+# ==========================================
+# Configuration & Helpers
+# ==========================================
 def load_category_colors():
-    """Load category color mappings from JSON file."""
-    colors_path = Path(__file__).parent.parent / "constants" / "category_color.json"
+    """Load category color mappings from SCSS file."""
+    colors_path = Path(__file__).parent.parent / "constants" / "category_colors.scss"
+    colors = {}
+    
+    if not colors_path.exists():
+        return colors
+
     with open(colors_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        for line in f:
+            line = line.strip()
+            if line.startswith("$") and ":" in line:
+                key, value = line.split(":", 1)
+                # Convert $variable-name to "Variable Name"
+                # e.g. $personal-care -> Personal Care
+                category = key.strip().lstrip("$").replace("-", " ").title()
+                color = value.strip().rstrip(";")
+                colors[category] = color
+    return colors
 
 
 def load_budget_colors():
@@ -21,6 +39,10 @@ def load_budget_colors():
     with open(colors_path, "r", encoding="utf-8") as f:
         return json.load(f)
     
+
+# ==========================================
+# Time-based Charts
+# ==========================================
 def bar_chart_transactions_by_type(df, period="Month"):
 
     if period == "Month":
@@ -33,49 +55,11 @@ def bar_chart_transactions_by_type(df, period="Month"):
     chart = alt.Chart(df).mark_bar().encode(
     x=x_axis,
     y='sum(amount):Q',
-    color=alt.Color('type:N', scale=alt.Scale(domain=['Expense', 'Income'], range=['red', 'green'])),
+    color=alt.Color('type:N', scale=alt.Scale(domain=['Expense', 'Income'], range=['#EF4348', '#28B16A'])),
     xOffset='type:N'
 )
     return chart
 
-
-def chart_expenses_by_category(df):
-    """
-    Create vertical bar chart for expenses by category.
-    
-    Args:
-        df: DataFrame with 'category' and 'amount' columns
-    """
-    # Load category colors
-    category_colors = load_category_colors()
-    
-    # Get unique categories in the dataframe
-    categories = df["category"].unique().tolist()
-    
-    # Create domain and range for color scale
-    domain = categories
-    range_colors = [category_colors.get(cat, "#808080") for cat in categories]  # Default to gray if not found
-    
-    chart = (
-        alt.Chart(df)
-        .mark_bar()
-        .encode(
-            x=alt.X("category:N", title="Category", sort="-y"),
-            y=alt.Y("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
-            color=alt.Color(
-                "category:N",
-                scale=alt.Scale(domain=domain, range=range_colors),
-                legend=None
-            ),
-            tooltip=["category", alt.Tooltip("amount:Q", format="~s", title="Amount"), "note"]
-        )
-        .properties(
-            width="container",
-            height=400,
-            title="Expenses by Category"
-        )
-    )
-    return chart
 
 
 def chart_expenses_by_period(df, period="Month"):
@@ -124,37 +108,94 @@ def chart_expenses_by_period(df, period="Month"):
     return chart
 
 
-def chart_top_transactions(df):
+def chart_expenses_by_budget_month(df):
     """
-    Create horizontal bar chart for top transactions.
-    
+    Create stacked bar chart for expenses by budget and month.
+    Budgets are ordered: "Gastos fijos" first, then "Chao culpa", then others.
     Args:
-        df: DataFrame with transaction details including 'category' and 'note'
+        df: DataFrame with 'date', 'budget', and 'amount' columns
     """
-    # Create a label for the bars (category + note if available)
     df = df.copy()
-    df["label"] = df.apply(
-        lambda row: f"{row['category']}" + (f" - {row['note']}" if pd.notna(row['note']) and row['note'] else ""),
-        axis=1
-    )
+    
+    # Load budget colors
+    budget_colors = load_budget_colors()
+    
+    # Define budget order: "Gastos fijos" first, then "Chao culpa", then others
+    budget_order = ["Gastos fijos", "Chao culpa"]
+    all_budgets = df["budget"].unique().tolist()
+    other_budgets = [b for b in all_budgets if b not in budget_order]
+    ordered_budgets = budget_order + sorted(other_budgets)
+    
+    # Create ordered categorical for budget
+    df["budget"] = pd.Categorical(df["budget"], categories=ordered_budgets, ordered=True)
+    
+    # Sort by date and budget
+    df = df.sort_values(["date", "budget"])
+    
+    # Build color scale domain and range from budget colors
+    domain = ordered_budgets
+    range_colors = [budget_colors.get(budget, "#808080") for budget in ordered_budgets]
     
     chart = (
         alt.Chart(df)
-        .mark_bar()
+        .mark_bar(
+            cornerRadiusTopLeft=3,
+            cornerRadiusTopRight=3
+        )
         .encode(
-            x=alt.X("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
-            y=alt.Y("label:N", title="Transaction", sort="-x"),
-            color=alt.Color("category:N", legend=alt.Legend(title="Category")),
+            x=alt.X("month(date):O", title="Month"),
+            y=alt.Y("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
+            color=alt.Color(
+                "budget:N",
+                title="Budget",
+                scale=alt.Scale(domain=domain, range=range_colors),
+                sort=ordered_budgets
+            ),
             tooltip=[
-                "label",
-                alt.Tooltip("amount:Q", format="~s", title="Amount"),
-                alt.Tooltip("date:T", format="%Y-%m-%d", title="Date")
+                alt.Tooltip("month(date):O", title="Month"),
+                "budget",
+                alt.Tooltip("amount:Q", format="~s", title="Amount")
             ]
         )
         .properties(
             width="container",
             height=400,
-            title="Top 10 Transactions"
+            title="Expenses by Budget and Month"
+        )
+    )
+    
+    return chart
+
+
+# ==========================================
+# Category & Label Charts
+# ==========================================
+def bar_chart_by_category(df):
+    """
+    Create vertical bar chart for expenses by category.
+    
+    Args:
+        df: DataFrame with 'category' and 'amount' columns
+    """
+    
+    # Get unique categories in the dataframe
+    categories = get_categories_ranked_by_amount(df)
+    
+    chart = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X("category:N", title="Category", sort=categories),
+            y=alt.Y("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
+            color=alt.Color(
+                "category:N",
+                legend=None
+            ),
+            tooltip=["category", alt.Tooltip("amount_universal_clp:Q", format="~s", title="Amount"), "note", "labels"]
+        )
+        .properties(
+            width="container",
+            height=400,
         )
     )
     return chart
@@ -232,62 +273,43 @@ def chart_top_expenses_by_label(df):
                 title="Expenses by Label"
             )
         )
+    return chart
 
 
-def chart_expenses_by_budget_month(df):
+# ==========================================
+# Transaction Charts
+# ==========================================
+def chart_top_transactions(df):
     """
-    Create stacked bar chart for expenses by budget and month.
-    Budgets are ordered: "Gastos fijos" first, then "Chao culpa", then others.
+    Create horizontal bar chart for top transactions.
+    
     Args:
-        df: DataFrame with 'date', 'budget', and 'amount' columns
+        df: DataFrame with transaction details including 'category' and 'note'
     """
+    # Create a label for the bars (category + note if available)
     df = df.copy()
-    
-    # Load budget colors
-    budget_colors = load_budget_colors()
-    
-    # Define budget order: "Gastos fijos" first, then "Chao culpa", then others
-    budget_order = ["Gastos fijos", "Chao culpa"]
-    all_budgets = df["budget"].unique().tolist()
-    other_budgets = [b for b in all_budgets if b not in budget_order]
-    ordered_budgets = budget_order + sorted(other_budgets)
-    
-    # Create ordered categorical for budget
-    df["budget"] = pd.Categorical(df["budget"], categories=ordered_budgets, ordered=True)
-    
-    # Sort by date and budget
-    df = df.sort_values(["date", "budget"])
-    
-    # Build color scale domain and range from budget colors
-    domain = ordered_budgets
-    range_colors = [budget_colors.get(budget, "#808080") for budget in ordered_budgets]
+    df["label"] = df.apply(
+        lambda row: f"{row['category']}" + (f" - {row['note']}" if pd.notna(row['note']) and row['note'] else ""),
+        axis=1
+    )
     
     chart = (
         alt.Chart(df)
-        .mark_bar(
-            cornerRadiusTopLeft=3,
-            cornerRadiusTopRight=3
-        )
+        .mark_bar()
         .encode(
-            x=alt.X("month(date):O", title="Month"),
-            y=alt.Y("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
-            color=alt.Color(
-                "budget:N",
-                title="Budget",
-                scale=alt.Scale(domain=domain, range=range_colors),
-                sort=ordered_budgets
-            ),
+            x=alt.X("amount:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
+            y=alt.Y("label:N", title="Transaction", sort="-x"),
+            color=alt.Color("category:N", legend=alt.Legend(title="Category")),
             tooltip=[
-                alt.Tooltip("month(date):O", title="Month"),
-                "budget",
-                alt.Tooltip("amount:Q", format="~s", title="Amount")
+                "label",
+                alt.Tooltip("amount:Q", format="~s", title="Amount"),
+                alt.Tooltip("date:T", format="%Y-%m-%d", title="Date")
             ]
         )
         .properties(
             width="container",
             height=400,
-            title="Expenses by Budget and Month"
+            title="Top 10 Transactions"
         )
     )
-    
     return chart

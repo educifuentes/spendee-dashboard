@@ -21,10 +21,10 @@ from utils.transforms import (
     get_top_expenses_by_label,
     get_available_periods,
     get_period_dates,
-    get_period_expenses
+    get_transactions_by_category_sorted
 )
 from utils.charts import (
-    chart_expenses_by_category,
+    bar_chart_by_category,
     bar_chart_transactions_by_type,
     chart_expenses_by_period,
     chart_top_transactions,
@@ -144,7 +144,7 @@ else:
 st.title(f"{st.session_state[selected_period_key]} ")
 
 # Period selector filters UI
-col1, col2,col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
 wallet_options = ["All"] + sorted(df["wallet"].unique().tolist())
 
@@ -186,15 +186,23 @@ if selected_categories:
     filtered_df = filter_by_category(filtered_df, selected_categories)
 if selected_labels:
     filtered_df = filter_by_label(filtered_df, selected_labels)
+if selected_wallet != "All":
+    filtered_df = filtered_df[filtered_df["wallet"] == selected_wallet]
+
+expenses_df = filtered_df[filtered_df["type"] == "Expense"].copy()
+income_df = filtered_df[filtered_df["type"] == "Income"].copy()
 
 # ------------------------------------------
 # 4. Visualizations
 # ------------------------------------------
 
-# Chart 1: Expenses bar
+# Chart 1: Transactions bar side by side
 
+# Change first tab to display according to granularity
 if granularity == "Month":
     tabs_config = [("Weeks", "Week"), ("Days", "Day"), ("Months", "Month")]
+elif granularity == "Year":
+    tabs_config = [("Months", "Month"), ("Weeks", "Week"), ("Days", "Day")]
 else:
     tabs_config = [("Days", "Day"), ("Weeks", "Week"), ("Months", "Month")]
 
@@ -204,26 +212,32 @@ for tab, (label, period) in zip(tabs, tabs_config):
         st.altair_chart(bar_chart_transactions_by_type(filtered_df, period=period), use_container_width=True)
 
 # Chart 2: Expenses by Category
-st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
+st.subheader("By Category")
+
+tab1, tab2 = st.tabs(["Expenses", "Income"])
+
+with tab1:
+    st.subheader("Expenses by Category")
+    st.altair_chart(bar_chart_by_category(expenses_df), width='stretch')
+with tab2:
+    st.subheader("Income by Category")
+    st.altair_chart(bar_chart_by_category(income_df), width='stretch')
 
 
-# tab1, tab2, tab3, tab4 = st.tabs([wallet_options])
-# with tab1:
-#     filtered_df = filter_by_date_range(df, pd.Timestamp(start_date), pd.Timestamp(end_date))
-#     st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
-# with tab2:
-#     filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[1]], pd.Timestamp(start_date), pd.Timestamp(end_date))
-#     st.altair_chart(chart_expenses_by_category(filtered_df), wid  th='stretch')
-# with tab3:
-#     filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[2]], pd.Timestamp(start_date), pd.Timestamp(end_date))
-#     st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')  
-# with tab4:
-#     filtered_df = filter_by_date_range(df[df["wallet"]==wallet_options[3]], pd.Timestamp(start_date), pd.Timestamp(end_date))
-#     st.altair_chart(chart_expenses_by_category(filtered_df), width='stretch')
+# Chart 3: Tables
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Expenses by Category")
+    st.table(get_transactions_by_category_sorted(expenses_df))
+with col2:
+    st.subheader("Income by Category")
+    st.table(get_transactions_by_category_sorted(income_df))
 
 
-# Chart 2: Top 10 Transactions 
-st.table(get_period_expenses(filtered_df))
+
+
 
 # top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
 # if not top_transactions.empty:

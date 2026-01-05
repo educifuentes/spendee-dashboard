@@ -97,6 +97,7 @@ st.title("📊 Data Viewer")
 
 # Load data
 df = load_transactions()
+df.sort_values("date", ascending=False, inplace=True)
 
 st.write(f"**Total transactions:** {len(df)}")
 if "date" in df.columns and len(df) > 0:

@@ -6,6 +6,9 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 
+# ==========================================
+# Data Loading
+# ==========================================
 def load_clean_data():
     """Load cleaned expense data."""
     data_path = Path(__file__).parent.parent / "data" / "clean" / "expenses_main-clp_clean.csv"
@@ -17,27 +20,9 @@ def load_clean_data():
     return df
 
 
-def filter_by_date_range(df, start_date, end_date):
-    """Filter dataframe by date range."""
-    # Normalize timezone-aware dates to timezone-naive for comparison
-    # This prevents TypeError when comparing datetime64[ns, UTC] with timezone-naive Timestamp
-    df_dates = df["date"].dt.tz_localize(None) if df["date"].dt.tz is not None else df["date"]
-    
-    # Ensure start_date and end_date are timezone-naive Timestamps
-    if isinstance(start_date, pd.Timestamp):
-        start_date = start_date.tz_localize(None) if start_date.tz is not None else start_date
-    else:
-        start_date = pd.Timestamp(start_date)
-    
-    if isinstance(end_date, pd.Timestamp):
-        end_date = end_date.tz_localize(None) if end_date.tz is not None else end_date
-    else:
-        end_date = pd.Timestamp(end_date)
-    
-    # Create mask using normalized dates
-    mask = (df_dates >= start_date) & (df_dates <= end_date)
-    return df[mask].copy()
-
+# ==========================================
+# Data Transformation
+# ==========================================
 def create_period_columns(df):
     """Create day, week, month, year columns from date."""
     df["day"] = df["date"].dt.strftime("%Y-%m-%d")
@@ -63,11 +48,34 @@ def create_universal_amount(df):
     rates_map = dict(zip(rates_df["month"], rates_df["rate"]))
 
     df["rate"] = df["date"].dt.strftime("%Y-%m").map(rates_map).fillna(900)
-    df["amount_universal_clp"] = df.apply(lambda x: x["amount"] * x["rate"] if x["currency"] == "USD" else x["amount"], axis=1)
+    df["amount_universal_clp"] = df.apply(lambda x: x["amount"] * x["rate"] if x["currency"] == "USD" else x["amount"], axis=1).round(0)
 
-    # disply as clp currency
-    df["amount_universal_clp"] = df["amount_universal_clp"].apply(lambda x: f"${x:,.0f}")
     return df.drop(columns=["rate"])
+
+
+# ==========================================
+# Filtering Utilities
+# ==========================================
+def filter_by_date_range(df, start_date, end_date):
+    """Filter dataframe by date range."""
+    # Normalize timezone-aware dates to timezone-naive for comparison
+    # This prevents TypeError when comparing datetime64[ns, UTC] with timezone-naive Timestamp
+    df_dates = df["date"].dt.tz_localize(None) if df["date"].dt.tz is not None else df["date"]
+    
+    # Ensure start_date and end_date are timezone-naive Timestamps
+    if isinstance(start_date, pd.Timestamp):
+        start_date = start_date.tz_localize(None) if start_date.tz is not None else start_date
+    else:
+        start_date = pd.Timestamp(start_date)
+    
+    if isinstance(end_date, pd.Timestamp):
+        end_date = end_date.tz_localize(None) if end_date.tz is not None else end_date
+    else:
+        end_date = pd.Timestamp(end_date)
+    
+    # Create mask using normalized dates
+    mask = (df_dates >= start_date) & (df_dates <= end_date)
+    return df[mask].copy()
 
 def filter_by_category(df, categories):
     """Filter dataframe by categories."""
@@ -89,6 +97,80 @@ def filter_by_label(df, labels):
     return df
 
 
+# ==========================================
+# Period & Date Helpers
+# ==========================================
+def get_available_periods(df, period_type):
+    """Get available periods from dataframe, formatted and sorted chronologically."""
+    df_copy = df.copy()
+    
+    if period_type == "Month":
+        # Group by year-month, format as "Month Year"
+        df_copy["period_key"] = df_copy["date"].dt.to_period("M")
+        periods = df_copy.groupby("period_key")["date"].first().reset_index()
+        periods["period_label"] = periods["period_key"].apply(lambda p: p.strftime("%B %Y"))
+        periods["period_value"] = periods["period_key"].astype(str)
+    elif period_type == "Week":
+        # Group by ISO week, get Monday of the week, format as "Month Day, Year"
+        df_copy["year"] = df_copy["date"].dt.isocalendar().year
+        df_copy["week"] = df_copy["date"].dt.isocalendar().week
+        df_copy["period_key"] = df_copy["year"].astype(str) + "-W" + df_copy["week"].astype(str).str.zfill(2)
+        
+        # Calculate Monday of each week
+        periods = df_copy.groupby("period_key")["date"].first().reset_index()
+        periods["monday"] = periods["date"].apply(lambda d: d - pd.Timedelta(days=d.weekday()))
+        # Format as "Month Day, Year" (handle day without leading zero)
+        periods["period_label"] = periods["monday"].apply(lambda d: f"{d.strftime('%B')} {d.day}, {d.year}")
+        periods["period_value"] = periods["period_key"]
+    else:  # Year
+        df_copy["period_key"] = df_copy["date"].dt.year
+        periods = df_copy.groupby("period_key")["date"].first().reset_index()
+        periods["period_label"] = periods["period_key"].astype(str)
+        periods["period_value"] = periods["period_key"].astype(str)
+    
+    # Sort chronologically by date (descending - most recent first)
+    periods = periods.sort_values("date", ascending=False)
+    return periods[["period_label", "period_value"]].to_dict("records")
+
+def get_period_dates(granularity, selected_period_value):
+    """
+    Calculate start and end dates based on granularity and period value.
+    
+    Args:
+        granularity: "Month", "Week", or "Year"
+        selected_period_value: String representation of the period (e.g. "2023-01", "2023-W01", "2023")
+        
+    Returns:
+        tuple: (start_date, end_date) as pandas Timestamps
+    """
+    if granularity == "Month":
+        # Parse YYYY-MM format
+        year, month = map(int, selected_period_value.split("-"))
+        start_date = pd.Timestamp(year=year, month=month, day=1)
+        # Get last day of month
+        if month == 12:
+            end_date = pd.Timestamp(year=year+1, month=1, day=1) - pd.Timedelta(days=1)
+        else:
+            end_date = pd.Timestamp(year=year, month=month+1, day=1) - pd.Timedelta(days=1)
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+    elif granularity == "Week":
+        # Parse YYYY-WXX format, get Monday and Sunday of that week
+        year, week = selected_period_value.split("-W")
+        year, week = int(year), int(week)
+        # Get Monday of the week
+        start_date = pd.Timestamp.fromisocalendar(year, week, 1)
+        end_date = start_date + pd.Timedelta(days=6, hours=23, minutes=59, seconds=59)
+    else:  # Year
+        year = int(selected_period_value)
+        start_date = pd.Timestamp(year=year, month=1, day=1)
+        end_date = pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
+        
+    return start_date, end_date
+
+
+# ==========================================
+# KPI Metrics
+# ==========================================
 def get_current_month_expenses(df):
     """Get total expenses for current month."""
     now = datetime.now()
@@ -121,6 +203,9 @@ def get_last_month_expenses(df):
     return last_month[last_month["type"] == "Expense"]["amount"].sum()
 
 
+# ==========================================
+# Chart Data Aggregations
+# ==========================================
 def get_expenses_by_category(df, start_date, end_date):
     """Get expenses aggregated by category for selected period."""
     filtered = filter_by_date_range(df, start_date, end_date)
@@ -151,20 +236,21 @@ def get_top_transactions(df, n=10, year=None, month=None):
     top = top.sort_values("amount", ascending=True)  # For horizontal bar chart
     return top
 
-def get_period_expenses(df):
-    """Get expenses aggregated by category with transaction counts."""
-    # Filter for expenses
-    if "type" in df.columns:
-        df = df[df["type"] == "Expense"]
-
+def get_transactions_by_category_sorted(df):
+    """Get transactions aggregated by category with transaction counts."""
     res = df.groupby("category").agg(
-        amount=("amount", "sum"),
+        amount=("amount_universal_clp", "sum"),
         count=("date", "count")
     ).reset_index().sort_values("amount", ascending=False)
 
     res["transaction_label"] = res["count"].astype(str) + " transactions"
+
     res["amount"] = res["amount"].apply(lambda x: f"${x:,.0f}")
-    return res.set_index("category")
+    return res.set_index("category").drop(columns=["count"])
+
+def get_categories_ranked_by_amount(df):
+    """Get list of categories ranked by total amount (descending)."""
+    return df.groupby("category")["amount_universal_clp"].sum().sort_values(ascending=False).index.tolist()
 
 def get_top_expenses_by_label(df, n=10, year=None, month=None):
     """Get top N expenses aggregated by label for a given month (default: current month)."""
@@ -201,39 +287,6 @@ def get_top_expenses_by_label(df, n=10, year=None, month=None):
     return label_totals
 
 
-def get_available_periods(df, period_type):
-    """Get available periods from dataframe, formatted and sorted chronologically."""
-    df_copy = df.copy()
-    
-    if period_type == "Month":
-        # Group by year-month, format as "Month Year"
-        df_copy["period_key"] = df_copy["date"].dt.to_period("M")
-        periods = df_copy.groupby("period_key")["date"].first().reset_index()
-        periods["period_label"] = periods["period_key"].apply(lambda p: p.strftime("%B %Y"))
-        periods["period_value"] = periods["period_key"].astype(str)
-    elif period_type == "Week":
-        # Group by ISO week, get Monday of the week, format as "Month Day, Year"
-        df_copy["year"] = df_copy["date"].dt.isocalendar().year
-        df_copy["week"] = df_copy["date"].dt.isocalendar().week
-        df_copy["period_key"] = df_copy["year"].astype(str) + "-W" + df_copy["week"].astype(str).str.zfill(2)
-        
-        # Calculate Monday of each week
-        periods = df_copy.groupby("period_key")["date"].first().reset_index()
-        periods["monday"] = periods["date"].apply(lambda d: d - pd.Timedelta(days=d.weekday()))
-        # Format as "Month Day, Year" (handle day without leading zero)
-        periods["period_label"] = periods["monday"].apply(lambda d: f"{d.strftime('%B')} {d.day}, {d.year}")
-        periods["period_value"] = periods["period_key"]
-    else:  # Year
-        df_copy["period_key"] = df_copy["date"].dt.year
-        periods = df_copy.groupby("period_key")["date"].first().reset_index()
-        periods["period_label"] = periods["period_key"].astype(str)
-        periods["period_value"] = periods["period_key"].astype(str)
-    
-    # Sort chronologically by date (descending - most recent first)
-    periods = periods.sort_values("date", ascending=False)
-    return periods[["period_label", "period_value"]].to_dict("records")
-
-
 def get_expenses_by_budget_month(df, start_date=None, end_date=None):
     """
     Get expenses aggregated by budget and month.
@@ -262,39 +315,3 @@ def get_expenses_by_budget_month(df, start_date=None, end_date=None):
     result["date"] = pd.to_datetime(result["date"].astype(str))
     
     return result[["date", "budget", "amount"]]
-
-
-def get_period_dates(granularity, selected_period_value):
-    """
-    Calculate start and end dates based on granularity and period value.
-    
-    Args:
-        granularity: "Month", "Week", or "Year"
-        selected_period_value: String representation of the period (e.g. "2023-01", "2023-W01", "2023")
-        
-    Returns:
-        tuple: (start_date, end_date) as pandas Timestamps
-    """
-    if granularity == "Month":
-        # Parse YYYY-MM format
-        year, month = map(int, selected_period_value.split("-"))
-        start_date = pd.Timestamp(year=year, month=month, day=1)
-        # Get last day of month
-        if month == 12:
-            end_date = pd.Timestamp(year=year+1, month=1, day=1) - pd.Timedelta(days=1)
-        else:
-            end_date = pd.Timestamp(year=year, month=month+1, day=1) - pd.Timedelta(days=1)
-        end_date = end_date.replace(hour=23, minute=59, second=59)
-    elif granularity == "Week":
-        # Parse YYYY-WXX format, get Monday and Sunday of that week
-        year, week = selected_period_value.split("-W")
-        year, week = int(year), int(week)
-        # Get Monday of the week
-        start_date = pd.Timestamp.fromisocalendar(year, week, 1)
-        end_date = start_date + pd.Timedelta(days=6, hours=23, minutes=59, seconds=59)
-    else:  # Year
-        year = int(selected_period_value)
-        start_date = pd.Timestamp(year=year, month=1, day=1)
-        end_date = pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
-        
-    return start_date, end_date
