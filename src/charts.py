@@ -6,7 +6,7 @@ from pathlib import Path
 
 import altair as alt
 import pandas as pd
-from utils.transforms import get_categories_ranked_by_amount
+from src.transforms import get_categories_ranked_by_amount
 
 
 # ==========================================

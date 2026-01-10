@@ -2,12 +2,11 @@
 Budgets page - Show expenses by budget and month.
 """
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
-
-from utils.db import load_transactions
-from utils.transforms import get_expenses_by_budget_month, filter_by_date_range
-from utils.charts import chart_expenses_by_budget_month
+from datetime import datetime
+from src.utils import format_currency_columns
+from src.db import load_transactions
+from src.transforms import get_expenses_by_budget_month
+from src.charts import chart_expenses_by_budget_month
 
 
 # Page configuration
@@ -60,10 +59,11 @@ if not budget_data.empty:
     st.altair_chart(chart, width='stretch')
     
     # Optional: Show summary table
-    with st.expander("View Summary Table"):
+    with st.expander("View Data"):
         # Create month label for display
         budget_data_display = budget_data.copy()
         budget_data_display["month_label"] = budget_data_display["date"].dt.strftime("%Y-%m")
+        budget_data_display = format_currency_columns(budget_data_display, "CLP")
         summary = budget_data_display.pivot_table(
             index="budget",
             columns="month_label",

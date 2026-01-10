@@ -4,7 +4,7 @@ Database access functions for Supabase using Streamlit secrets. Loads data and e
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
-from utils.transforms import create_period_columns, create_universal_amount
+from src.transforms import create_period_columns, create_universal_amount
 
 
 @st.cache_resource

@@ -1,35 +1,4 @@
-"""
-Streamlit BI Dashboard for Spendee Expenses
-"""
 import streamlit as st
-import pandas as pd
-from datetime import datetime
-
-from utils.db import load_transactions
-from utils.transforms import (
-    filter_by_date_range,
-    filter_by_category,
-    filter_by_label,
-    create_period_columns,
-    create_universal_amount,
-    get_current_month_expenses,
-    get_current_month_income,
-    get_last_month_expenses,
-    get_expenses_by_category,
-    get_expenses_by_month,
-    get_top_transactions,
-    get_top_expenses_by_label,
-    get_available_periods,
-    get_period_dates,
-    get_transactions_by_category_sorted
-)
-from utils.charts import (
-    bar_chart_by_category,
-    bar_chart_transactions_by_type,
-    chart_expenses_by_period,
-    chart_top_transactions,
-    chart_top_expenses_by_label
-)
 
 
 # ==========================================
@@ -42,214 +11,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==========================================
-# Sidebar & Data Loading
-# ==========================================
-st.sidebar.title("Navigation")
-
-# Load data from Supabase
-df = load_transactions()
-
-now = datetime.now()
-
-# Category filter
-all_categories = sorted(df["category"].unique())
-selected_categories = st.sidebar.multiselect(
-    "Category",
-    options=all_categories,
-    default=[]
-)
-
-# Label filter
-all_labels = set()
-for labels_str in df["labels"].dropna():
-    if labels_str:
-        all_labels.update([l.strip() for l in str(labels_str).split(",")])
-all_labels = sorted([l for l in all_labels if l])
-
-selected_labels = st.sidebar.multiselect(
-    "Label",
-    options=all_labels,
-    default=[]
-)
-
-# ==========================================
-# Main Dashboard Layout
-# ==========================================
-st.title(":material/paid: Spendee Expense Dashboard")
+# Section - Reports
+overview_page = st.Page("reports/1_overview.py", title="Overview", icon=":material/dashboard:")
+transactions_page = st.Page("reports/2_transactions.py", title="Transactions", icon=":material/inventory_2:")
+budgets_page = st.Page("reports/3_budgets.py", title="Budgets", icon=":material/inventory_2:")
 
 
-# ------------------------------------------
-# 1. Key Performance Indicators (KPIs)
-# ------------------------------------------
+# Section - Tools
+uploads_page = st.Page("tools/1_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
+explore_page = st.Page("tools/2_data_explorer.py", title="Data Explorer", icon=":material/search:")
+validations_page = st.Page("tools/3_data_outliers.py", title="Data Outliers", icon=":material/warning:")
 
-col1, col2, col3 = st.columns(3)
+# current page
+pg = st.navigation({
+    "Reports": [overview_page, transactions_page, budgets_page],
+    "Tools": [uploads_page, explore_page, validations_page]
+})
 
-# Current month expenses with percentage change
-current_month_total = get_current_month_expenses(df)
-last_month_total = get_last_month_expenses(df)
-
-if last_month_total > 0:
-    pct_change = ((current_month_total - last_month_total) / last_month_total) * 100
-    delta = f"{pct_change:+.1f}%"
-else:
-    delta = "N/A"
-
-col1.metric(
-    "Current Month Expenses",
-    f"${current_month_total:,.0f}",
-    delta=delta
-)
-
-col2.metric(
-    "Last Month Expenses",
-    f"${last_month_total:,.0f}"
-)
-
-col3.metric(
-    "Current Month Income",
-    f"${get_current_month_income(df):,.0f}"
-)
-
-
-# ------------------------------------------
-# 2. Period Selection Logic
-# ------------------------------------------
-
-# Period selector filters - calculate period options first
-granularity_key = "granularity"
-if granularity_key not in st.session_state:
-    st.session_state[granularity_key] = "Month"
-
-granularity = st.session_state[granularity_key]
-available_periods = get_available_periods(df, granularity)
-period_options = [p["period_label"] for p in available_periods]
-period_values = {p["period_label"]: p["period_value"] for p in available_periods}
-
-# Get default index for selected period
-selected_period_key = "selected_period_label"
-if selected_period_key not in st.session_state or st.session_state[selected_period_key] not in period_options:
-    if granularity == "Month" and period_options:
-        current_period_label = datetime.now().strftime("%B %Y")
-        default_index = period_options.index(current_period_label) if current_period_label in period_options else len(period_options) - 1
-    elif period_options:
-        default_index = len(period_options) - 1
-    else:
-        default_index = 0
-    st.session_state[selected_period_key] = period_options[default_index] if period_options else ""
-else:
-    default_index = period_options.index(st.session_state[selected_period_key]) if st.session_state[selected_period_key] in period_options else 0
-
-# Show title (uses session_state value)
-st.title(f"{st.session_state[selected_period_key]} ")
-
-# Period selector filters UI
-col1, col2, col3 = st.columns(3)
-
-wallet_options = ["All"] + sorted(df["wallet"].unique().tolist())
-
-with col1:
-    granularity = st.selectbox(
-        "Period",
-        options=["Month", "Week", "Year"],
-        index=0,
-        key=granularity_key
-    )
-
-with col2:
-    selected_period_label = st.selectbox(
-        granularity,
-        options=period_options,
-        index=default_index,
-        key=selected_period_key
-    )
-with col3:
-    selected_wallet = st.selectbox(
-        "Wallet",
-        options= wallet_options,
-        index=0,
-    )
-
-# Recalculate start and end dates from selected period
-selected_period_value = period_values[selected_period_label]
-
-start_date, end_date = get_period_dates(granularity, selected_period_value)
-
-# ------------------------------------------
-# 3. Data Filtering
-# ------------------------------------------
-
-# Re-apply filters to dataframe with updated dates
-filtered_df = df.copy()
-filtered_df = filter_by_date_range(filtered_df, start_date, end_date)
-if selected_categories:
-    filtered_df = filter_by_category(filtered_df, selected_categories)
-if selected_labels:
-    filtered_df = filter_by_label(filtered_df, selected_labels)
-if selected_wallet != "All":
-    filtered_df = filtered_df[filtered_df["wallet"] == selected_wallet]
-
-expenses_df = filtered_df[filtered_df["type"] == "Expense"].copy()
-income_df = filtered_df[filtered_df["type"] == "Income"].copy()
-
-# ------------------------------------------
-# 4. Visualizations
-# ------------------------------------------
-
-# Chart 1: Transactions bar side by side
-
-# Change first tab to display according to granularity
-if granularity == "Month":
-    tabs_config = [("Weeks", "Week"), ("Days", "Day"), ("Months", "Month")]
-elif granularity == "Year":
-    tabs_config = [("Months", "Month"), ("Weeks", "Week"), ("Days", "Day")]
-else:
-    tabs_config = [("Days", "Day"), ("Weeks", "Week"), ("Months", "Month")]
-
-tabs = st.tabs([t[0] for t in tabs_config])
-for tab, (label, period) in zip(tabs, tabs_config):
-    with tab:
-        st.altair_chart(bar_chart_transactions_by_type(filtered_df, period=period), use_container_width=True)
-
-# Chart 2: Expenses by Category
-st.subheader("By Category")
-
-tab1, tab2 = st.tabs(["Expenses", "Income"])
-
-with tab1:
-    st.subheader("Expenses by Category")
-    st.altair_chart(bar_chart_by_category(expenses_df), width='stretch')
-with tab2:
-    st.subheader("Income by Category")
-    st.altair_chart(bar_chart_by_category(income_df), width='stretch')
-
-
-# Chart 3: Tables
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("Expenses by Category")
-    st.table(get_transactions_by_category_sorted(expenses_df))
-with col2:
-    st.subheader("Income by Category")
-    st.table(get_transactions_by_category_sorted(income_df))
-
-
-
-
-
-# top_transactions = get_top_transactions(df, n=10, year=now.year, month=now.month)
-# if not top_transactions.empty:
-#     st.altair_chart( chart_top_transactions(top_transactions), width='stretch')
-# else:
-#     st.info("No transactions available for the current month.")
-
-# Chart 3: Top Expenses by Label
-
-# top_labels = get_top_expenses_by_label(df, n=10, year=now.year, month=now.month)
-# if not top_labels.empty:
-#     chart4 = chart_top_expenses_by_label(top_labels)
-#     st.altair_chart(chart4, width='stretch')
-# else:
-#     st.info("No expenses with labels available for the current month.")
+pg.run()
+    
