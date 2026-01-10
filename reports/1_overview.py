@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-from src.db import load_transactions
+from src.data_preparation import load_transactions
 from src.transforms import (
     filter_by_date_range,
     get_current_month_expenses,

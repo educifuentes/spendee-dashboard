@@ -1,5 +1,5 @@
 import streamlit as st
-from src.db import load_transactions
+from src.data_preparation import load_transactions
 
 df = load_transactions()
 

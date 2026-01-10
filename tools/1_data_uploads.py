@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from src.clean import add_record_hash, load_budgets
-from src.db import get_supabase
+from src.data_preparation import get_supabase
 
 
 def clean_spendee_df(df: pd.DataFrame) -> pd.DataFrame:

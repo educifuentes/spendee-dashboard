@@ -10,7 +10,7 @@ from pandas.api.types import (
     is_object_dtype,
 )
 
-from src.db import load_transactions
+from src.data_preparation import load_transactions
 
 
 def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:

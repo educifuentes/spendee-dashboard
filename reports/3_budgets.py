@@ -4,7 +4,7 @@ Budgets page - Show expenses by budget and month.
 import streamlit as st
 from datetime import datetime
 from src.utils import format_currency_columns
-from src.db import load_transactions
+from src.data_preparation import load_transactions
 from src.transforms import get_expenses_by_budget_month
 from src.charts import chart_expenses_by_budget_month
 
