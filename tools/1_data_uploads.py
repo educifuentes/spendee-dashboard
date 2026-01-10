@@ -8,7 +8,7 @@ from src.clean import add_record_hash, load_budgets
 from src.data_preparation import get_supabase
 
 
-def clean_spendee_df(df: pd.DataFrame) -> pd.DataFrame:
+def clean_raw_spendee_csv(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean a Spendee DataFrame (same logic as clean_transactions but for in-memory DataFrame).
     
@@ -70,7 +70,7 @@ if uploaded_file is not None:
         
         # Clean the dataframe
         with st.spinner("Cleaning data..."):
-            df_cleaned = clean_spendee_df(df_raw)
+            df_cleaned = clean_raw_spendee_csv(df_raw)
         
         st.metric("Cleaned rows", len(df_cleaned))
         
