@@ -188,6 +188,20 @@ def get_current_month_income(df):
     current_month = filter_by_date_range(df, start, end)
     return current_month[current_month["type"] == "Income"]["amount"].sum()
 
+def get_last_month_income(df):
+    """Get total income for last month."""
+    now = datetime.now()
+    if now.month == 1:
+        last_month_start = datetime(now.year - 1, 12, 1)
+        last_month_end = datetime(now.year - 1, 12, 31, 23, 59, 59)
+    else:
+        last_month_start = datetime(now.year, now.month - 1, 1)
+        last_month_end = datetime(now.year, now.month, 1) - timedelta(seconds=1)
+    
+    last_month = filter_by_date_range(df, last_month_start, last_month_end)
+    return last_month[last_month["type"] == "Income"]["amount"].sum()
+
+
 
 def get_last_month_expenses(df):
     """Get total expenses for last month."""

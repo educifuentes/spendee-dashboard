@@ -8,6 +8,7 @@ from src.transforms import (
     get_current_month_expenses,
     get_current_month_income,
     get_last_month_expenses,
+    get_last_month_income,
     get_available_periods,
     get_period_dates,
     get_transactions_by_category_sorted
@@ -16,36 +17,31 @@ from src.charts import (
     bar_chart_by_category,
     bar_chart_transactions_by_type
 )
+from src.utils import setup_period_selection, get_wallet_options
 
 
-# ==========================================
-# Sidebar & Data Loading
-# ==========================================
 
 # Load data from Supabase
-df = load_transactions()
+all_transactions, expenses_df, income_df = load_transactions()
 
 now = datetime.now()
 
 
-# ==========================================
-# Main Dashboard Layout
-# ==========================================
 st.title(":material/paid: Spendee Expense Dashboard")
 st.subheader("Overview of your expenses and income")
 
-st.write("Data range is from " + df["date"].min().strftime("%Y-%m-%d") + " to " + df["date"].max().strftime("%Y-%m-%d"))
+st.write("Data range is from " + all_transactions["date"].min().strftime("%Y-%m-%d") + " to " + all_transactions["date"].max().strftime("%Y-%m-%d"))
 
 
 # ------------------------------------------
 # 1. Key Performance Indicators (KPIs)
 # ------------------------------------------
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 # Current month expenses with percentage change
-current_month_total = get_current_month_expenses(df)
-last_month_total = get_last_month_expenses(df)
+current_month_total = get_current_month_expenses(expenses_df)
+last_month_total = get_last_month_expenses(expenses_df)
 
 if last_month_total > 0:
     pct_change = ((current_month_total - last_month_total) / last_month_total) * 100
@@ -66,7 +62,12 @@ col2.metric(
 
 col3.metric(
     "Current Month Income",
-    f"${get_current_month_income(df):,.0f}"
+    f"${get_current_month_income(income_df):,.0f}"
+)
+
+col4.metric(
+    "Last Month Income",
+    f"${get_last_month_income(income_df):,.0f}"
 )
 
 
@@ -74,37 +75,23 @@ col3.metric(
 # 2. Period Selection Logic
 # ------------------------------------------
 
-# Period selector filters - calculate period options first
 granularity_key = "granularity"
-if granularity_key not in st.session_state:
-    st.session_state[granularity_key] = "Month"
-
-granularity = st.session_state[granularity_key]
-available_periods = get_available_periods(df, granularity)
-period_options = [p["period_label"] for p in available_periods]
-period_values = {p["period_label"]: p["period_value"] for p in available_periods}
-
-# Get default index for selected period
 selected_period_key = "selected_period_label"
-if selected_period_key not in st.session_state or st.session_state[selected_period_key] not in period_options:
-    if granularity == "Month" and period_options:
-        current_period_label = datetime.now().strftime("%B %Y")
-        default_index = period_options.index(current_period_label) if current_period_label in period_options else len(period_options) - 1
-    elif period_options:
-        default_index = len(period_options) - 1
-    else:
-        default_index = 0
-    st.session_state[selected_period_key] = period_options[default_index] if period_options else ""
-else:
-    default_index = period_options.index(st.session_state[selected_period_key]) if st.session_state[selected_period_key] in period_options else 0
+
+granularity, selected_period_label, period_options, period_values, default_index = setup_period_selection(
+    all_transactions,
+    get_available_periods,
+    granularity_key=granularity_key,
+    selected_period_key=selected_period_key
+)
 
 # Show title (uses session_state value)
-st.title(f"{st.session_state[selected_period_key]} ")
+st.title(f"{selected_period_label} ")
 
 # Period selector filters UI
 
 
-wallet_options = ["All"] + sorted(df["wallet"].unique().tolist())
+wallet_options = get_wallet_options(all_transactions)
 
 col1, col2, col3 = st.columns(3, gap="medium", width=800)
 
@@ -140,14 +127,12 @@ start_date, end_date = get_period_dates(granularity, selected_period_value)
 # ------------------------------------------
 
 # Re-apply filters to dataframe with updated dates
-filtered_df = df.copy()
+filtered_df = all_transactions.copy()
 filtered_df = filter_by_date_range(filtered_df, start_date, end_date)
 
 if selected_wallet != "All":
     filtered_df = filtered_df[filtered_df["wallet"] == selected_wallet]
 
-expenses_df = filtered_df[filtered_df["type"] == "Expense"].copy()
-income_df = filtered_df[filtered_df["type"] == "Income"].copy()
 
 # ------------------------------------------
 # 4. Visualizations
