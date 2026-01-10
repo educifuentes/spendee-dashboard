@@ -38,21 +38,6 @@ def get_supabase() -> Client:
     
     return create_client(url, key)
 
-def split_transactions_by_type(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Split transactions DataFrame into expenses and income DataFrames based on type column.
-
-    """
-    df = df.copy()
-    
-    # Filter expenses (type == "Expense")
-    expenses_df = df[df["type"].str.lower() == "expense"].copy()
-    
-    # Filter income (type == "Income")
-    income_df = df[df["type"].str.lower() == "income"].copy()
-    
-    return expenses_df, income_df
-
 
 @st.cache_data(ttl=600)
 def load_transactions() -> pd.DataFrame:
@@ -103,8 +88,6 @@ def load_transactions() -> pd.DataFrame:
         cols.insert(amount_index + 1, "amount_universal_clp")
         df = df[cols]
 
-    
-    expenses_df, income_df = split_transactions_by_type(df)
-    return df, expenses_df, income_df
+    return df
 
 

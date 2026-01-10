@@ -1,11 +1,29 @@
 import streamlit as st
 from src.data_preparation import load_transactions
+from src.utils import format_currency_columns
 
 df = load_transactions()
 
+excluded_categories = ["Mortgage"]    
+expenses_df = df[(df["type"] == "Expense") & (~df["category"].isin(excluded_categories))]
+
 st.title(":material/inventory_2: Transactions Report")
 
-st.dataframe(df.sort_values(by="date", ascending=False, inplace=True), width='stretch')
+st.subheader("Top 40 Expenses")
+
+top_50 = expenses_df.sort_values(by="amount_universal_clp", ascending=False).head(40)
+
+selected_columns = [
+    "date",
+    "amount",
+    "currency",
+    "amount_universal_clp",
+    "category",
+    "note",
+    "labels"
+]
+
+st.dataframe(format_currency_columns(top_50[selected_columns], "CLP"), width='stretch', height="content")
 
 # Category filter
 # all_categories = sorted(df["category"].unique())

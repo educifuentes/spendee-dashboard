@@ -22,7 +22,7 @@ from src.utils import setup_period_selection, get_wallet_options
 
 
 # Load data from Supabase
-all_transactions, expenses_df, income_df = load_transactions()
+all_transactions = load_transactions()
 
 now = datetime.now()
 
@@ -40,8 +40,8 @@ st.write("Data range is from " + all_transactions["date"].min().strftime("%Y-%m-
 col1, col2, col3, col4 = st.columns(4)
 
 # Current month expenses with percentage change
-current_month_total = get_current_month_expenses(expenses_df)
-last_month_total = get_last_month_expenses(expenses_df)
+current_month_total = get_current_month_expenses(all_transactions)
+last_month_total = get_last_month_expenses(all_transactions)
 
 if last_month_total > 0:
     pct_change = ((current_month_total - last_month_total) / last_month_total) * 100
@@ -62,12 +62,12 @@ col2.metric(
 
 col3.metric(
     "Current Month Income",
-    f"${get_current_month_income(income_df):,.0f}"
+    f"${get_current_month_income(all_transactions):,.0f}"
 )
 
 col4.metric(
     "Last Month Income",
-    f"${get_last_month_income(income_df):,.0f}"
+    f"${get_last_month_income(all_transactions):,.0f}"
 )
 
 
