@@ -133,6 +133,9 @@ filtered_df = filter_by_date_range(filtered_df, start_date, end_date)
 if selected_wallet != "All":
     filtered_df = filtered_df[filtered_df["wallet"] == selected_wallet]
 
+expenses_df = filtered_df[filtered_df["type"] == "Expense"]
+income_df = filtered_df[filtered_df["type"] == "Income"]
+
 
 # ------------------------------------------
 # 4. Visualizations
