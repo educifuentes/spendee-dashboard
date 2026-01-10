@@ -11,7 +11,8 @@ from src.transforms import (
     get_last_month_income,
     get_available_periods,
     get_period_dates,
-    get_transactions_by_category_sorted
+    get_transactions_by_category_sorted,
+    get_transactions_by_labels_sorted
 )
 from src.charts import (
     bar_chart_by_category,
@@ -180,3 +181,11 @@ with col2:
     st.subheader("Income by Category")
     st.table(get_transactions_by_category_sorted(income_df))
 
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Expenses by Label")
+    st.table(get_transactions_by_labels_sorted(expenses_df))
+with col2:
+    st.subheader("Income by Label")
+    st.table(get_transactions_by_labels_sorted(income_df))

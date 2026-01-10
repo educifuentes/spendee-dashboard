@@ -262,6 +262,20 @@ def get_transactions_by_category_sorted(df):
     res["amount"] = res["amount"].apply(lambda x: f"${x:,.0f}")
     return res.set_index("category").drop(columns=["count"])
 
+def get_transactions_by_labels_sorted(df):
+    """Get transactions aggregated by labels with transaction counts."""
+    res = df.groupby("labels").agg(
+        amount=("amount_universal_clp", "sum"),
+        count=("date", "count")
+    ).reset_index().sort_values("amount", ascending=False)
+
+    res["transaction_label"] = res["count"].astype(str) + " transactions"
+
+    res["amount"] = res["amount"].apply(lambda x: f"${x:,.0f}")
+    return res.set_index("labels").drop(columns=["count"])
+
+
+
 def get_categories_ranked_by_amount(df):
     """Get list of categories ranked by total amount (descending)."""
     return df.groupby("category")["amount_universal_clp"].sum().sort_values(ascending=False).index.tolist()
