@@ -4,6 +4,8 @@
 # Data files
 data/**/*.csv
 
+notes/
+
 # Python
 __pycache__/
 *.py[cod]
