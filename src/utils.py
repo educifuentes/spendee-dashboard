@@ -96,3 +96,62 @@ def get_wallet_options(df, include_all: bool = True):
         wallet_options = ["All"] + wallet_options
     
     return wallet_options
+
+
+def st_dataframe_helper(
+    df: pd.DataFrame, 
+    selected_columns: list[str] = None, 
+    date_columns: list[str] = None, 
+    currency_columns: list[str] = None, 
+    multiselect_columns: list[str] = None,
+    **kwargs
+):
+    """
+    Custom wrapper for st.dataframe that simplifies column configuration.
+    
+    Args:
+        df: The DataFrame to display.
+        selected_columns: List of columns to show. If None, shows all.
+        date_columns: List of columns to format as DateColumn.
+        currency_columns: List of columns to format as NumberColumn (currency).
+        multiselect_columns: List of columns to format as MultiselectColumn.
+        **kwargs: Additional arguments passed to st.dataframe.
+    """
+    display_df = df.copy()
+    if selected_columns:
+        # Only keep columns that actually exist in the dataframe
+        valid_cols = [c for c in selected_columns if c in display_df.columns]
+        display_df = display_df[valid_cols]
+    
+    column_config = {}
+    
+    if date_columns:
+        for col in date_columns:
+            if col in display_df.columns:
+                column_config[col] = st.column_config.DateColumn(col.replace("_", " ").title())
+                
+    if currency_columns:
+        for col in currency_columns:
+            if col in display_df.columns:
+                column_config[col] = st.column_config.NumberColumn(
+                    col.replace("_", " ").title(),
+                    format="$ %d"
+                )
+                
+    if multiselect_columns:
+        for col in multiselect_columns:
+            if col in display_df.columns:
+                column_config[col] = st.column_config.MultiselectColumn(col.replace("_", " ").title())
+    
+    # Merge with any external config provided in kwargs
+    if "column_config" in kwargs:
+        column_config.update(kwargs.pop("column_config"))
+        
+    st.dataframe(
+        display_df,
+        column_config=column_config,
+        hide_index=kwargs.pop("hide_index", True),
+        width=kwargs.pop("width", "stretch"),
+        use_container_width=kwargs.pop("use_container_width", True),
+        **kwargs
+    )

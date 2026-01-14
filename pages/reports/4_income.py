@@ -1,6 +1,6 @@
 import streamlit as st
 from src.data_preparation import load_transactions
-from src.utils import format_currency_columns
+from src.utils import st_dataframe_helper
 
 df = load_transactions()
 
@@ -17,16 +17,11 @@ selected_columns = [
     "labels"    
 ]
 
-st.dataframe(
-    income_df[selected_columns],
-    column_config={
-        "date": st.column_config.DateColumn("Date"),
-        "category": st.column_config.MultiselectColumn("Category"),
-        "amount": st.column_config.NumberColumn(
-            "Amount",
-            format="%.0f",
-        )
-    },
-    hide_index=True,
-    width="stretch"
+st_dataframe_helper(
+    income_df,
+    selected_columns=selected_columns,
+    date_columns=["date"],
+    currency_columns=["amount"],
+    multiselect_columns=["category"]
 )
+
