@@ -1,5 +1,6 @@
 # Streamlit secrets - contains sensitive information
 .streamlit/secrets.toml
+deploy/
 
 # Data files
 data/**/*.csv

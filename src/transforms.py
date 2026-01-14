@@ -43,7 +43,7 @@ def create_universal_amount(df):
         return df
 
     # Approximate USD to CLP rates (First day of month)
-    rates_path = Path(__file__).parent.parent / "constants" / "usd_clp_rates.csv"
+    rates_path = Path(__file__).parent / "constants" / "usd_clp_rates.csv"
     rates_df = pd.read_csv(rates_path)
     rates_map = dict(zip(rates_df["month"], rates_df["rate"]))
 

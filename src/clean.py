@@ -23,7 +23,7 @@ OUTPUT_FILE = Path(__file__).parent.parent / "data" / "clean" / f"transactions_c
 
 def load_budgets():
     """Load budget category mappings from JSON file."""
-    budgets_path = Path(__file__).parent.parent / "constants" / "budgets.json"
+    budgets_path = Path(__file__).parent / "constants" / "budgets.json"
     with open(budgets_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
