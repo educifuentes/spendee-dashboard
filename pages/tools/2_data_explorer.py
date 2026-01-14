@@ -14,13 +14,11 @@ st.title("📊 Data Viewer")
 df = load_transactions()
 df.sort_values("date", ascending=False, inplace=True)
 
-st.write(f"**Total transactions:** {len(df)}")
-if "date" in df.columns and len(df) > 0:
-    st.write(f"**Date range:** {df['date'].min().date()} to {df['date'].max().date()}")
+# # Display filtered dataframe
+# filtered_df = filter_dataframe(df)
 
-# Display filtered dataframe
-filtered_df = filter_dataframe(df)
+# st.write(f"**Filtered transactions:** {len(filtered_df)}")
+st.markdown(f"**Data range:** {df['date'].min().date()} to {df['date'].max().date()}")
 
-st.write(f"**Filtered transactions:** {len(filtered_df)}")
-st.dataframe(filtered_df, width='stretch')
+st.dataframe(df, width='stretch')
 
