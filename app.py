@@ -15,6 +15,7 @@ st.set_page_config(
 overview_page = st.Page("pages/reports/1_overview.py", title="Overview", icon=":material/dashboard:")
 transactions_page = st.Page("pages/reports/2_transactions.py", title="Transactions", icon=":material/inventory_2:")
 budgets_page = st.Page("pages/reports/3_budgets.py", title="Budgets", icon=":material/inventory_2:")
+income_page = st.Page("pages/reports/4_income.py", title="Income", icon=":material/inventory_2:")
 
 
 # Section - Tools
@@ -24,7 +25,7 @@ validations_page = st.Page("pages/tools/3_data_outliers.py", title="Data Outlier
 
 # current page
 pg = st.navigation({
-    "Reports": [overview_page, transactions_page, budgets_page],
+    "Reports": [overview_page, transactions_page, budgets_page, income_page],
     "Tools": [uploads_page, explore_page, validations_page]
 })
 
