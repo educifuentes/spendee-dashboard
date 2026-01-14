@@ -8,18 +8,17 @@ income_df = df[(df["type"] == "Income")]
 
 st.title(":material/inventory_2: Income Report")
 
-selected_columns = [
-    "date",
-    "amount",
-    "currency",
-    "category",
-    "note",
-    "labels"    
-]
 
 st_dataframe_helper(
     income_df,
-    selected_columns=selected_columns,
+    selected_columns=[
+        "date",
+        "amount",
+        "currency",
+        "category",
+        "note",
+        "labels"    
+    ],
     date_columns=["date"],
     currency_columns=["amount"],
     multiselect_columns=["category"]
