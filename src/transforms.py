@@ -287,12 +287,12 @@ def get_transactions_by_labels_sorted(df):
     
     # Aggregate by label
     res = expanded_df.groupby("label").agg(
-        amount=("amount", "sum"),
+        total_amount=("amount", "sum"),
         count=("amount", "count")
-    ).reset_index().sort_values("amount", ascending=False)
+    ).reset_index().sort_values("total_amount", ascending=False)
 
     res["transaction_label"] = res["count"].astype(str) + " transactions"
-    res["amount_fmt"] = res["amount"].apply(lambda x: f"${x:,.0f}")
+    res["amount_fmt"] = res["total_amount"].apply(lambda x: f"${x:,.0f}")
     
     return res.rename(columns={"label": "labels", "amount_fmt": "amount"}).set_index("labels")[["amount", "transaction_label"]]
 
