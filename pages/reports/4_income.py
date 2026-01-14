@@ -10,7 +10,7 @@ st.title(":material/inventory_2: Income Report")
 
 
 st_dataframe_helper(
-    income_df,
+    income_df.sort_values("date", ascending=False),
     selected_columns=[
         "date",
         "amount",
