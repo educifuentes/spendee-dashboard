@@ -263,16 +263,38 @@ def get_transactions_by_category_sorted(df):
     return res.set_index("category").drop(columns=["count"])
 
 def get_transactions_by_labels_sorted(df):
-    """Get transactions aggregated by labels with transaction counts."""
-    res = df.groupby("labels").agg(
-        amount=("amount_universal_clp", "sum"),
-        count=("date", "count")
+    """
+    Get transactions aggregated by labels with transaction counts.
+    Handles comma-separated labels by expanding them into separate rows.
+    """
+    # Filter rows with labels
+    df_labels = df[df["labels"].notna() & (df["labels"].astype(str).str.strip() != "")].copy()
+    
+    if df_labels.empty:
+        return pd.DataFrame(columns=["amount", "transaction_label"]).set_index(pd.Index([], name="labels"))
+
+    # Expand comma-separated labels
+    expanded = []
+    for _, row in df_labels.iterrows():
+        labels = [l.strip() for l in str(row["labels"]).split(",") if l.strip()]
+        for label in labels:
+            expanded.append({
+                "label": label,
+                "amount": row["amount_universal_clp"]
+            })
+            
+    expanded_df = pd.DataFrame(expanded)
+    
+    # Aggregate by label
+    res = expanded_df.groupby("label").agg(
+        amount=("amount", "sum"),
+        count=("amount", "count")
     ).reset_index().sort_values("amount", ascending=False)
 
     res["transaction_label"] = res["count"].astype(str) + " transactions"
-
-    res["amount"] = res["amount"].apply(lambda x: f"${x:,.0f}")
-    return res.set_index("labels").drop(columns=["count"])
+    res["amount_fmt"] = res["amount"].apply(lambda x: f"${x:,.0f}")
+    
+    return res.rename(columns={"label": "labels", "amount_fmt": "amount"}).set_index("labels")[["amount", "transaction_label"]]
 
 
 
@@ -281,38 +303,48 @@ def get_categories_ranked_by_amount(df):
     return df.groupby("category")["amount_universal_clp"].sum().sort_values(ascending=False).index.tolist()
 
 def get_top_expenses_by_label(df, n=10, year=None, month=None):
-    """Get top N expenses aggregated by label for a given month (default: current month)."""
-    if year is None:
-        year = datetime.now().year
-    if month is None:
-        month = datetime.now().month
+    """
+    Get top N expenses aggregated by label for a given month (default: current month).
+    Handles comma-separated labels by expanding them into separate rows.
+    """
+    if year is None: year = datetime.now().year
+    if month is None: month = datetime.now().month
     
-    filtered = df[(df["date"].dt.year == year) & (df["date"].dt.month == month)].copy()
+    # Filter by date and type
+    mask = (df["date"].dt.year == year) & (df["date"].dt.month == month)
+    if "type" in df.columns:
+        mask &= (df["type"].str.lower() == "expense")
     
-    # Expand labels (split comma-separated labels) and preserve category
-    label_expanded = []
-    for _, row in filtered.iterrows():
-        if pd.notna(row["labels"]) and row["labels"]:
-            labels_list = [l.strip() for l in str(row["labels"]).split(",")]
-            for label in labels_list:
-                label_expanded.append({
-                    "label": label,
-                    "amount": row["amount"],
-                    "category": row["category"]
-                })
+    filtered = df[mask].copy()
     
-    if not label_expanded:
+    # Filter rows with labels
+    df_labels = filtered[filtered["labels"].notna() & (filtered["labels"].astype(str).str.strip() != "")].copy()
+    
+    if df_labels.empty:
         return pd.DataFrame(columns=["label", "amount", "category"])
     
+    # Expand labels
+    expanded = []
+    for _, row in df_labels.iterrows():
+        labels = [l.strip() for l in str(row["labels"]).split(",") if l.strip()]
+        for label in labels:
+            expanded.append({
+                "label": label,
+                "amount": row["amount_universal_clp"] if "amount_universal_clp" in row else row["amount"],
+                "category": row["category"]
+            })
+    
+    expanded_df = pd.DataFrame(expanded)
+    
     # Group by label, sum amounts, and get most common category
-    label_df = pd.DataFrame(label_expanded)
-    label_totals = label_df.groupby("label").agg({
+    res = expanded_df.groupby("label").agg({
         "amount": "sum",
-        "category": lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else x.iloc[0]  # Most common category
+        "category": lambda x: x.mode().iloc[0] if not x.mode().empty else x.iloc[0]
     }).reset_index()
-    label_totals = label_totals.sort_values("amount", ascending=False).head(n)
-    label_totals = label_totals.sort_values("amount", ascending=True)  # For horizontal bar chart
-    return label_totals
+    
+    # Sort for horizontal bar chart (top N, then ascending for Altair)
+    res = res.sort_values("amount", ascending=False).head(n)
+    return res.sort_values("amount", ascending=True)
 
 
 def get_expenses_by_budget_month(df, start_date=None, end_date=None):
