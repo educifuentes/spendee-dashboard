@@ -34,7 +34,7 @@ st.subheader("Overview of your expenses and income")
 st.write("Data range is from " + all_transactions["date"].min().strftime("%Y-%m-%d") + " to " + all_transactions["date"].max().strftime("%Y-%m-%d"))
 
 st.markdown("Streamlit community app link: [Spendee Expense Dashboard](https://spendee-dashboard.streamlit.app/)")
-st.markdown("Heroku deployed app link: [Spendee Expense Dashboard](https://spendee-dashboard.herokuapp.com/)")
+st.markdown("Heroku deployed app link: [Spendee Expense Dashboard](https://spendee-dashboard-edu-b17d31f03697.herokuapp.com/)")
 
 
 # ------------------------------------------
