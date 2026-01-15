@@ -34,6 +34,9 @@ pg = st.navigation({
 # ==========================================
 if not st.user.get("is_logged_in"):
     st.title("Spendee Dashboard")
+    # DEBUG
+    st.write(st.secrets)
+
     st.write("Please log in to access the dashboard.")
     if st.button("Log in with Google", type="primary", icon=":material/login:"):
         st.login()

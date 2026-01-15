@@ -37,6 +37,7 @@ st.markdown("Streamlit community app link: [Spendee Expense Dashboard](https://s
 st.markdown("Heroku deployed app link: [Spendee Expense Dashboard](https://spendee-dashboard-edu-b17d31f03697.herokuapp.com/)")
 st.markdown("Render deployed app link: [Spendee Expense Dashboard](https://spendee-dashboard.onrender.com/)")
 
+st.write(st.secrets)
 
 # ------------------------------------------
 # 1. Key Performance Indicators (KPIs)
