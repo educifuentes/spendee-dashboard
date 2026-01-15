@@ -36,6 +36,16 @@ if not st.user.get("is_logged_in"):
     st.title("Spendee Dashboard")
     # DEBUG
     st.write(st.secrets)
+    try:
+        st.write("Config Options:")
+        st.write({
+            "server.enableXsrfProtection": st.get_option("server.enableXsrfProtection"),
+            "server.enableCORS": st.get_option("server.enableCORS"),
+            "server.headless": st.get_option("server.headless"),
+        })
+    except Exception as e:
+        st.write(f"Could not read config: {e}")
+    st.write(st.user)
 
     st.write("Please log in to access the dashboard.")
     if st.button("Log in with Google", type="primary", icon=":material/login:"):
