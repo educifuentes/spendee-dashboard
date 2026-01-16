@@ -54,19 +54,19 @@ pg = st.navigation({
 #     st.stop()  # Stop execution if not logged in
 
 # Check if user is allowed
-user_email = st.user.get("email")
-if user_email not in st.secrets.get("allowed_emails", []):
-    st.title("Access Denied")
-    st.error(f"User '{user_email}' is not authorized to access this application.")
-    if st.button("Log out"):
-        st.logout()
-    st.stop()  # Stop execution if not authorized
+# user_email = st.user.get("email")
+# if user_email not in st.secrets.get("allowed_emails", []):
+#     st.title("Access Denied")
+#     st.error(f"User '{user_email}' is not authorized to access this application.")
+#     if st.button("Log out"):
+#         st.logout()
+#     st.stop()  # Stop execution if not authorized
 
-# Show user info and logout in sidebar
-with st.sidebar:
-    st.divider()
-    st.write(f"Logged in as: **{user_email}**")
-    if st.button("Log out", icon=":material/logout:"):
-        st.logout()
+# # Show user info and logout in sidebar
+# with st.sidebar:
+#     st.divider()
+#     st.write(f"Logged in as: **{user_email}**")
+#     if st.button("Log out", icon=":material/logout:"):
+#         st.logout()
 
 pg.run()
