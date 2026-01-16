@@ -22,11 +22,12 @@ income_page = st.Page("pages/reports/4_income.py", title="Income", icon=":materi
 uploads_page = st.Page("pages/tools/1_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
 explore_page = st.Page("pages/tools/2_data_explorer.py", title="Data Explorer", icon=":material/search:")
 validations_page = st.Page("pages/tools/3_data_outliers.py", title="Data Outliers", icon=":material/warning:")
+search_page = st.Page("pages/tools/4_search.py", title="Search", icon=":material/search:")
 
 # current page
 pg = st.navigation({
     "Reports": [overview_page, transactions_page, budgets_page, income_page],
-    "Tools": [uploads_page, explore_page, validations_page]
+    "Tools": [uploads_page, explore_page, validations_page, search_page]
 })
 
 # ==========================================
