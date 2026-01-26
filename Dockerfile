@@ -20,11 +20,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY . .
 
-# Expose the port that Streamlit will run on (Cloud Run uses 8080 by default)
+# Ensure entrypoint script is executable
+RUN chmod +x entrypoint.sh
+
+# Expose the port that Streamlit will run on
 EXPOSE 8080
 
-# Healthcheck to verify the container is running correctly
+# Healthcheck
 HEALTHCHECK CMD curl --fail http://localhost:8080/_stcore/health
 
-# Command to run the Streamlit app
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
+# Run the entrypoint script
+ENTRYPOINT ["./entrypoint.sh"]
