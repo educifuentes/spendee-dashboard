@@ -55,7 +55,10 @@ pg = st.navigation({
 
 # Check if user is allowed
 # user_email = st.user.get("email")
-# if user_email not in st.secrets.get("allowed_emails", []):
+# allowed_emails = st.secrets.get("allowed_emails", [])
+# if isinstance(allowed_emails, str):
+#     allowed_emails = [email.strip() for email in allowed_emails.split(",")]
+# if user_email not in allowed_emails:
 #     st.title("Access Denied")
 #     st.error(f"User '{user_email}' is not authorized to access this application.")
 #     if st.button("Log out"):
