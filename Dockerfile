@@ -1,33 +1,33 @@
-# Use an official Python runtime as a parent image
+# Base image
 FROM python:3.11-slim
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
 # Install system dependencies
+# Removed software-properties-common as it's not needed for basic build tools in this base image
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/apt/lists/*
 
-# Copy the requirements file into the container at /app
+# Copy requirements and install dependencies
 COPY requirements.txt .
-
-# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code into the container
+# Copy the rest of the application
 COPY . .
 
-# Ensure entrypoint script is executable
-RUN chmod +x entrypoint.sh
+# Set environment variables for Streamlit
+ENV STREAMLIT_SERVER_PORT=8080
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
-# Expose the port that Streamlit will run on
+# Expose port 8080
 EXPOSE 8080
 
-# Healthcheck
-HEALTHCHECK CMD curl --fail http://localhost:8080/_stcore/health
+# Make setup script executable
+RUN chmod +x setup.sh
 
-# Run the entrypoint script
-ENTRYPOINT ["./entrypoint.sh"]
+# Start using the setup script
+ENTRYPOINT ["./setup.sh"]
