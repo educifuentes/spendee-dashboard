@@ -63,7 +63,7 @@ def setup_period_selection(df: pd.DataFrame, get_available_periods_func, granula
     # 1. Initialize/Sync granularity
     granularity = st.session_state.setdefault(granularity_key, "Month")
     
-    # 2. Get available periods (already sorted descending by date in transforms.py)
+    # 2. Get available periods (already sorted descending by date in utilities/transforms.py)
     periods = get_available_periods_func(df, granularity)
     options = [p["period_label"] for p in periods]
     values = {p["period_label"]: p["period_value"] for p in periods}
