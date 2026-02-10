@@ -1,6 +1,7 @@
 """
 Fact table for transactions.
 Enriches staging data with budget categories and derived columns.
+Final step of the csv cleaning pipeline. Ready to be loaded into the supabase database.
 """
 import pandas as pd
 

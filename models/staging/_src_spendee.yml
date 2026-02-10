@@ -2,6 +2,7 @@ sources:
   - name: spendee
     database: raw
     schema: transactions
+    path: /seeds/transactions
     tables:
       - name: main-clp
         descrition: billetera principal

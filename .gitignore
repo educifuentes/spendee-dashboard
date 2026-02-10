@@ -4,6 +4,7 @@ deploy/
 
 # Data files
 data/**/*.csv
+seeds/*.csv
 
 notes/
 
