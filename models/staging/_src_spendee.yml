@@ -1,25 +1,14 @@
 sources:
   - name: spendee
-    database: raw
-    schema: transactions
-    path: /seeds/transactions
+    schema: spendee
+    description: raw csv tables exported form spendee app.
     tables:
       - name: main-clp
-        descrition: billetera principal
-      - columns:
-          - name: id
-            description: id de la transaccion
-          - name: date
-            description: fecha de la transaccion
-          - name: amount
-            description: monto de la transaccion
-          - name: currency
-            description: moneda de la transaccion
-          - name: category
-            description: categoria de la transaccion
-          - name: description
-            description: descripcion de la transaccion
-          - name: account
-            description: cuenta de la transaccion
-          - name: type
-            description: tipo de la transaccion
+        path: seeds/transactions_export_2026-02-10_main-clp.csv
+        description: billetera todo clp
+      - name: unfcu
+        path: seeds/transactions_export_2026-02-10_unfcu.csv
+        description: billetera unfcu
+      - name: pasivos
+        path: seeds/transactions_export_2026-02-10_pasivos.csv
+        description: pasivos
