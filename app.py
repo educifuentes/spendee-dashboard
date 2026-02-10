@@ -12,22 +12,28 @@ st.set_page_config(
 )
 
 # Section - Reports
-overview_page = st.Page("pages/reports/1_overview.py", title="Overview", icon=":material/dashboard:")
-transactions_page = st.Page("pages/reports/2_transactions.py", title="Transactions", icon=":material/inventory_2:")
-budgets_page = st.Page("pages/reports/3_budgets.py", title="Budgets", icon=":material/inventory_2:")
-income_page = st.Page("pages/reports/4_income.py", title="Income", icon=":material/inventory_2:")
+overview_page = st.Page("pages/1_views/1_overview.py", title="Overview", icon=":material/dashboard:")
+transactions_page = st.Page("pages/1_views/2_transactions.py", title="Transactions", icon=":material/inventory_2:")
+budgets_page = st.Page("pages/1_views/3_budgets.py", title="Budgets", icon=":material/inventory_2:")
+income_page = st.Page("pages/1_views/4_income.py", title="Income", icon=":material/inventory_2:")
 
 
 # Section - Tools
-uploads_page = st.Page("pages/tools/1_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
-explore_page = st.Page("pages/tools/2_data_explorer.py", title="Data Explorer", icon=":material/search:")
-validations_page = st.Page("pages/tools/3_data_outliers.py", title="Data Outliers", icon=":material/warning:")
-search_page = st.Page("pages/tools/4_search.py", title="Search", icon=":material/search:")
+uploads_page = st.Page("pages/2_tools/1_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
+explore_page = st.Page("pages/2_tools/2_data_explorer.py", title="Data Explorer", icon=":material/search:")
+validations_page = st.Page("pages/2_tools/3_data_outliers.py", title="Data Outliers", icon=":material/warning:")
+search_page = st.Page("pages/2_tools/4_search.py", title="Search", icon=":material/search:")
+
+# Section - Dev
+staging_page = st.Page("pages/3_data_build/1_staging.py", title="Staging", icon=":material/database:")
+marts_page = st.Page("pages/3_data_build/2_marts.py", title="Marts", icon=":material/database:")
+bi_tables_page = st.Page("pages/3_data_build/3_bi_tables.py", title="BI Tables", icon=":material/database:")
 
 # current page
 pg = st.navigation({
     "Reports": [overview_page, transactions_page, budgets_page, income_page],
-    "Tools": [uploads_page, explore_page, validations_page, search_page]
+    "Tools": [uploads_page, explore_page, validations_page, search_page],
+    "Dev": [staging_page, marts_page, bi_tables_page]
 })
 
 # ==========================================

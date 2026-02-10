@@ -1,43 +1,15 @@
 
 import pandas as pd
+
+from models.staging._stg_spendee__transactions import stg_spendee__transactions
+
 from utilities.transforms import create_period_columns, create_universal_amount
 
 
 
-def fct_transactions(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Load transactions from Supabase and return as pandas DataFrame.
-    
-    Returns:
-        pd.DataFrame: Transactions with correct dtypes:
-            - date: timezone-aware datetime (UTC)
-            - amount: float
-    """
-    
-    # Query transactions table with pagination (Supabase limits to 1000 rows by default)
-    all_rows = []
-    start = 0
-    batch_size = 1000
-    while True:
-        response = supabase.table("transactions").select("*").range(start, start + batch_size - 1).execute()
-        rows = response.data
-        all_rows.extend(rows)
-        if len(rows) < batch_size:
-            break
-        start += batch_size
-    
-    # Convert to pandas DataFrame
-    df = pd.DataFrame(all_rows)
+def fct_transactions() -> pd.DataFrame:
 
-    # add log of the load with date range and number of records
-    print(f"Loaded {len(df)} transactions from Supabase.")
-    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
-    
-    # Ensure correct dtypes
-    if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"], utc=True)
-    if "amount" in df.columns:
-        df["amount"] = pd.to_numeric(df["amount"], errors="coerce").astype(float)
+    df = stg_spendee__transactions()
     
     # Create new columns
     df = create_period_columns(df)
