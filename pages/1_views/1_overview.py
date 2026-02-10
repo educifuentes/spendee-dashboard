@@ -14,7 +14,7 @@ from utilities.transforms import (
     get_transactions_by_category_sorted,
     get_transactions_by_labels_sorted
 )
-from src.charts import (
+from utilities.charts import (
     bar_chart_by_category,
     bar_chart_transactions_by_type
 )
