@@ -32,10 +32,6 @@ def stg_spendee__transactions() -> pd.DataFrame:
     
     # Convert to pandas DataFrame
     df = pd.DataFrame(all_rows)
-
-    # add log of the load with date range and number of records
-    print(f"Loaded {len(df)} transactions from Supabase.")
-    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
     
     # dtypes
     if "date" in df.columns:

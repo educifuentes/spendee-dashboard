@@ -47,7 +47,7 @@ def generate_rates_csv():
     })
 
     # Save to CSV
-    output_filename = Path(__file__).parent / "constants" / "usd_clp_rates.csv"
+    output_filename = Path(__file__).parent.parent / "utilities" / "constants" / "usd_clp_rates.csv"
     output.to_csv(output_filename, index=False)
     print(f"Successfully generated {output_filename} with {len(output)} records.")
 
