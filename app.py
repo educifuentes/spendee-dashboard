@@ -13,15 +13,16 @@ st.set_page_config(
 
 # Section - Reports
 overview_page = st.Page("pages/1_views/1_overview.py", title="Overview", icon=":material/dashboard:")
-transactions_page = st.Page("pages/1_views/2_transactions.py", title="Transactions", icon=":material/inventory_2:")
-budgets_page = st.Page("pages/1_views/3_budgets.py", title="Budgets", icon=":material/inventory_2:")
-income_page = st.Page("pages/1_views/4_income.py", title="Income", icon=":material/inventory_2:")
+trends_page = st.Page("pages/1_views/2_trends.py", title="Trends", icon=":material/trending_up:")
+income_page = st.Page("pages/1_views/3_income.py", title="Income", icon=":material/inventory_2:")
+transactions_page = st.Page("pages/1_views/4_transactions.py", title="Transactions", icon=":material/inventory_2:")
+budgets_page = st.Page("pages/1_views/5_budgets.py", title="Budgets", icon=":material/inventory_2:")
 
 
 # Section - Tools
-uploads_page = st.Page("pages/2_tools/1_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
-explore_page = st.Page("pages/2_tools/2_data_explorer.py", title="Data Explorer", icon=":material/search:")
-validations_page = st.Page("pages/2_tools/3_data_outliers.py", title="Data Outliers", icon=":material/warning:")
+explore_page = st.Page("pages/2_tools/1_data_explorer.py", title="Data Explorer", icon=":material/search:")
+validations_page = st.Page("pages/2_tools/2_validations.py", title="Validations", icon=":material/warning:")
+uploads_page = st.Page("pages/2_tools/3_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
 search_page = st.Page("pages/2_tools/4_search.py", title="Search", icon=":material/search:")
 
 # Section - Dev
@@ -35,47 +36,5 @@ pg = st.navigation({
     "Tools": [uploads_page, explore_page, validations_page, search_page],
     "Dev": [staging_page, marts_page, bi_tables_page]
 })
-
-# ==========================================
-# Authentication
-# ==========================================
-# if not st.user.get("is_logged_in"):
-#     st.title("Spendee Dashboard")
-#     # DEBUG
-#     st.write(st.secrets)
-#     try:
-#         st.write("Config Options:")
-#         st.write({
-#             "server.enableXsrfProtection": st.get_option("server.enableXsrfProtection"),
-#             "server.enableCORS": st.get_option("server.enableCORS"),
-#             "server.headless": st.get_option("server.headless"),
-#         })
-#     except Exception as e:
-#         st.write(f"Could not read config: {e}")
-#     st.write(st.user)
-
-#     st.write("Please log in to access the dashboard.")
-#     if st.button("Log in with Google", type="primary", icon=":material/login:"):
-#         st.login()
-#     st.stop()  # Stop execution if not logged in
-
-# Check if user is allowed
-# user_email = st.user.get("email")
-# allowed_emails = st.secrets.get("allowed_emails", [])
-# if isinstance(allowed_emails, str):
-#     allowed_emails = [email.strip() for email in allowed_emails.split(",")]
-# if user_email not in allowed_emails:
-#     st.title("Access Denied")
-#     st.error(f"User '{user_email}' is not authorized to access this application.")
-#     if st.button("Log out"):
-#         st.logout()
-#     st.stop()  # Stop execution if not authorized
-
-# # Show user info and logout in sidebar
-# with st.sidebar:
-#     st.divider()
-#     st.write(f"Logged in as: **{user_email}**")
-#     if st.button("Log out", icon=":material/logout:"):
-#         st.logout()
 
 pg.run()

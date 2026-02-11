@@ -6,6 +6,7 @@ from pathlib import Path
 
 import altair as alt
 import pandas as pd
+import streamlit as st
 from utilities.transforms import get_categories_ranked_by_amount
 
 
@@ -59,6 +60,22 @@ def bar_chart_transactions_by_type(df, period="Month"):
     xOffset='type:N'
 )
     return chart
+
+def render_transactions_tabbed_chart(df, granularity):
+    """
+    Renders a tabbed chart of transactions based on granularity.
+    """
+    if granularity == "Month":
+        tabs_config = [("Weeks", "Week"), ("Days", "Day"), ("Months", "Month")]
+    elif granularity == "Year":
+        tabs_config = [("Months", "Month"), ("Weeks", "Week"), ("Days", "Day")]
+    else:
+        tabs_config = [("Days", "Day"), ("Weeks", "Week"), ("Months", "Month")]
+
+    tabs = st.tabs([t[0] for t in tabs_config])
+    for tab, (label, period) in zip(tabs, tabs_config):
+        with tab:
+            st.altair_chart(bar_chart_transactions_by_type(df, period=period), use_container_width=True)
 
 
 

@@ -16,7 +16,8 @@ from utilities.transforms import (
 )
 from utilities.charts import (
     bar_chart_by_category,
-    bar_chart_transactions_by_type
+    bar_chart_transactions_by_type,
+    render_transactions_tabbed_chart
 )
 from utilities.misc import setup_period_selection, get_wallet_options
 
@@ -25,13 +26,15 @@ from utilities.misc import setup_period_selection, get_wallet_options
 # Load data from Supabase
 fct_transactions_df = fct_transactions()
 
+# heaader
+
 st.title(":material/paid: Spendee Expense Dashboard")
 
 st.write("Data range is from " + fct_transactions_df["date"].min().strftime("%Y-%m-%d") + " to " + fct_transactions_df["date"].max().strftime("%Y-%m-%d"))
 
 
 # ------------------------------------------
-# 1. Key Performance Indicators (KPIs)
+# 1. Metrics Panel
 # ------------------------------------------
 
 col1, col2, col3, col4 = st.columns(4)
@@ -134,37 +137,6 @@ expenses_df = filtered_df[filtered_df["type"] == "Expense"]
 income_df = filtered_df[filtered_df["type"] == "Income"]
 
 
-# ------------------------------------------
-# 4. Visualizations
-# ------------------------------------------
-
-# Chart 1: Transactions bar side by side
-
-# Change first tab to display according to granularity
-if granularity == "Month":
-    tabs_config = [("Weeks", "Week"), ("Days", "Day"), ("Months", "Month")]
-elif granularity == "Year":
-    tabs_config = [("Months", "Month"), ("Weeks", "Week"), ("Days", "Day")]
-else:
-    tabs_config = [("Days", "Day"), ("Weeks", "Week"), ("Months", "Month")]
-
-tabs = st.tabs([t[0] for t in tabs_config])
-for tab, (label, period) in zip(tabs, tabs_config):
-    with tab:
-        st.altair_chart(bar_chart_transactions_by_type(filtered_df, period=period), use_container_width=True)
-
-# Chart 2: Expenses by Category
-st.subheader("By Category")
-
-tab1, tab2 = st.tabs(["Expenses", "Income"])
-
-with tab1:
-    st.subheader("Expenses by Category")
-    st.altair_chart(bar_chart_by_category(expenses_df), width='stretch')
-with tab2:
-    st.subheader("Income by Category")
-    st.altair_chart(bar_chart_by_category(income_df), width='stretch')
-
 
 # Chart 3: Tables
 
@@ -185,3 +157,24 @@ with col1:
 with col2:
     st.subheader("Income by Label")
     st.table(get_transactions_by_labels_sorted(income_df))
+
+# ------------------------------------------
+# 4. Visualizations
+# ------------------------------------------
+# Chart 1: Transactions bar side by side
+render_transactions_tabbed_chart(filtered_df, granularity)
+
+
+# Chart 2: Expenses by Category
+st.subheader("By Category")
+
+tab1, tab2 = st.tabs(["Expenses", "Income"])
+
+with tab1:
+    st.subheader("Expenses by Category")
+    st.altair_chart(bar_chart_by_category(expenses_df), width='stretch')
+with tab2:
+    st.subheader("Income by Category")
+    st.altair_chart(bar_chart_by_category(income_df), width='stretch')
+
+
