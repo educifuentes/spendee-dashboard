@@ -16,7 +16,6 @@ overview_page = st.Page("pages/1_views/1_overview.py", title="Overview", icon=":
 trends_page = st.Page("pages/1_views/2_trends.py", title="Trends", icon=":material/trending_up:")
 income_page = st.Page("pages/1_views/3_income.py", title="Income", icon=":material/inventory_2:")
 transactions_page = st.Page("pages/1_views/4_transactions.py", title="Transactions", icon=":material/inventory_2:")
-budgets_page = st.Page("pages/1_views/5_budgets.py", title="Budgets", icon=":material/inventory_2:")
 
 
 # Section - Tools
@@ -32,7 +31,7 @@ bi_tables_page = st.Page("pages/3_data_build/3_bi_tables.py", title="BI Tables",
 
 # current page
 pg = st.navigation({
-    "Reports": [overview_page, trends_page, income_page, transactions_page, budgets_page],
+    "Reports": [overview_page, trends_page, income_page, transactions_page],
     "Tools": [explore_page, validations_page, search_page, uploads_page],
     "Dev": [staging_page, marts_page, bi_tables_page]
 })
