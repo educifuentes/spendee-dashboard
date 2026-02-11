@@ -4,13 +4,20 @@ from google.cloud.sql.connector import Connector
 import sqlalchemy
 from sqlalchemy import text
 
+import tomli
+
 # Configuration
-INSTANCE_CONNECTION_NAME = "clear-data-485013:southamerica-west1:spendee-dashboard"
-DB_USER = "postgres"
-DB_PASS = "c$MfKZ(B(GKQyX6^"
-DB_NAME = "postgres"
-TABLE_NAME = "transactions"
-CSV_FILE = "seeds/uploads/fct_transactions.csv"
+with open(".streamlit/secrets.toml", "rb") as f:
+    secrets = tomli.load(f)
+
+db_config = secrets["gcp_cloud_sql"]
+
+INSTANCE_CONNECTION_NAME = db_config["INSTANCE_CONNECTION_NAME"]
+DB_USER = db_config["DB_USER"]
+DB_PASS = db_config["DB_PASS"]
+DB_NAME = db_config["DB_NAME"]
+TABLE_NAME = db_config["TABLE_NAME"]
+CSV_FILE = db_config["CSV_FILE"]
 
 def getconn():
     with Connector() as connector:
