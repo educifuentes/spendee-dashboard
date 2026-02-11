@@ -1,6 +1,7 @@
 import pandas as pd
 from utilities.data_conection import get_supabase
-from utilities.data_transformations.enrichment import create_period_columns, create_universal_amount
+from utilities.data_transformations.periods import create_period_columns
+from utilities.data_transformations.universal_amount import create_universal_amount
 
 
 @st.cache_data(ttl=600)

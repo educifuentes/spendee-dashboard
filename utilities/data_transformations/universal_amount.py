@@ -1,16 +1,6 @@
 import pandas as pd
 from utilities.data_transformations.rates import get_usd_clp_rates_map
 
-def create_period_columns(df):
-    """Create day, week, month, year columns from date."""
-    df["day"] = df["date"].dt.strftime("%Y-%m-%d")
-    # Use isocalendar to correctly handle year boundaries for weeks
-    iso = df["date"].dt.isocalendar()
-    df["week"] = iso.year.astype(str) + "-W" + iso.week.astype(str).str.zfill(2)
-    df["month"] = df["date"].dt.strftime("%Y-%m")
-    df["year"] = df["date"].dt.year
-    return df
-
 def create_universal_amount(df):
     """
     Create amount_universal column in CLP.

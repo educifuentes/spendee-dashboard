@@ -1,12 +1,13 @@
 import pandas as pd
 
-from models.marts._fct_transactions import fct_transactions
+from models.marts.cloud_sql._stg_cloud_sql__transactions import stg_cloud_sql__transactions
 
 from utilities.constants.budgets import BUDGETS
-from utilities.data_transformations.enrichment import create_period_columns, create_universal_amount
+from utilities.data_transformations.periods import create_period_columns
+from utilities.data_transformations.universal_amount import create_universal_amount
 
 def bi_transactions():
-    df = fct_transactions()
+    df = stg_cloud_sql__transactions()
 
     # new columns
     df = create_period_columns(df)

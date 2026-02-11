@@ -1,5 +1,16 @@
 import pandas as pd
 
+def create_period_columns(df):
+    """Create day, week, month, year columns from date."""
+    df["day"] = df["date"].dt.strftime("%Y-%m-%d")
+    # Use isocalendar to correctly handle year boundaries for weeks
+    iso = df["date"].dt.isocalendar()
+    df["week"] = iso.year.astype(str) + "-W" + iso.week.astype(str).str.zfill(2)
+    df["month"] = df["date"].dt.strftime("%Y-%m")
+    df["year"] = df["date"].dt.year
+    return df
+
+
 def get_available_periods(df, period_type):
     """Get available periods from dataframe, formatted and sorted chronologically."""
     df_copy = df.copy()
