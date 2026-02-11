@@ -1,26 +1,19 @@
-import hashlib
 import pandas as pd
+import hashlib
 
-def add_record_hash(df: pd.DataFrame) -> pd.DataFrame:
+def add_record_hash(df, columns=None):
     """
-    Build a deterministic hash from the transaction content.
-    This prevents duplicates even when multiple rows share the same date.
+    Generates a record hash based on specified columns and adds it to the dataframe.
     """
-    def row_hash(r) -> str:
-        parts = [
-            _stable_str(r["date"]),
-            _stable_str(r["wallet"]),
-            _stable_str(r["type"]),
-            _stable_str(r["category"]),
-            _stable_str(r["amount"]),
-            _stable_str(r["currency"]),
-            _stable_str(r.get("note", "")),
-            _stable_str(r.get("labels", "")),
-            _stable_str(r["budget"]),
-        ]
-        payload = "|".join(parts).encode("utf-8")
-        return hashlib.sha256(payload).hexdigest()
+    if columns is None:
+        # Default columns to hash if none provided
+        columns = df.columns.tolist()
 
-    df = df.copy()
-    df["record_hash"] = df.apply(row_hash, axis=1)
+    def generate_hash(row):
+        # Concatenate values of specified columns, using string representation
+        # Handle nulls by using 'None' string
+        content = "|".join([str(row[col]) for col in columns])
+        return hashlib.md5(content.encode()).hexdigest()
+
+    df["record_hash"] = df.apply(generate_hash, axis=1)
     return df

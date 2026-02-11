@@ -28,12 +28,13 @@ search_page = st.Page("pages/2_tools/4_search.py", title="Search", icon=":materi
 staging_page = st.Page("pages/3_data_build/1_staging.py", title="Staging", icon=":material/database:")
 marts_page = st.Page("pages/3_data_build/2_marts.py", title="Marts", icon=":material/database:")
 bi_tables_page = st.Page("pages/3_data_build/3_bi_tables.py", title="BI Tables", icon=":material/database:")
+config_page = st.Page("pages/3_data_build/4_config.py", title="Configuration", icon=":material/settings:")
 
 # current page
 pg = st.navigation({
     "Reports": [overview_page, trends_page, income_page, transactions_page],
     "Tools": [explore_page, validations_page, search_page, uploads_page],
-    "Dev": [staging_page, marts_page, bi_tables_page]
+    "Dev": [staging_page, marts_page, bi_tables_page, config_page]
 })
 
 pg.run()
