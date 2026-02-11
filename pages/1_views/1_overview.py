@@ -13,6 +13,7 @@ from utilities.transforms import (
     get_transactions_by_category_sorted,
     get_transactions_by_labels_sorted
 )
+from models.marts.metrics.expense_metrics import get_mtd_expense_comparison
 from utilities.charts import (
     bar_chart_by_category,
     render_transactions_tabbed_chart
@@ -27,12 +28,21 @@ st.title(":material/paid: Spendee Expense Dashboard")
 st.info(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
 
 m1, m2, m3, m4 = st.columns(4)
+
+# MTD Comparison for primary metric
+curr_mtd, last_mtd, pct_change = get_mtd_expense_comparison(fct_transactions_df)
+
+m1.metric(
+    "MTD Expenses vs Last Month", 
+    f"${curr_mtd:,.0f}", 
+    delta=f"{pct_change:+.1f}%",
+    help=f"Compared to ${last_mtd:,.0f} spent by this day last month."
+)
+
+# Keep other monthly totals for context
 curr_exp = get_current_month_expenses(fct_transactions_df)
 last_exp = get_last_month_expenses(fct_transactions_df)
-pct_change = ((curr_exp - last_exp) / last_exp * 100) if last_exp > 0 else 0
-
-m1.metric("Current Month Expenses", f"${curr_exp:,.0f}", delta=f"{pct_change:+.1f}%" if last_exp > 0 else "N/A")
-m2.metric("Last Month Expenses", f"${last_exp:,.0f}")
+m2.metric("Current Month Total", f"${curr_exp:,.0f}")
 m3.metric("Current Month Income", f"${get_current_month_income(fct_transactions_df):,.0f}")
 m4.metric("Last Month Income", f"${get_last_month_income(fct_transactions_df):,.0f}")
 

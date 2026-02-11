@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
-from src.data_preparation import load_transactions
+
+from models.marts._fct_transactions import fct_transactions
+
 from utilities.misc import st_dataframe_helper
 
-df = load_transactions()
+df = fct_transactions()
 
 income_df = df[(df["type"] == "Income")]
 
