@@ -30,7 +30,7 @@ fct_transactions_df = fct_transactions()
 
 st.title(":material/paid: Spendee Expense Dashboard")
 
-st.write("Data range is from " + fct_transactions_df["date"].min().strftime("%Y-%m-%d") + " to " + fct_transactions_df["date"].max().strftime("%Y-%m-%d"))
+st.info("Data range is from " + fct_transactions_df["date"].min().strftime("%Y-%m-%d") + " to " + fct_transactions_df["date"].max().strftime("%Y-%m-%d"))
 
 
 # ------------------------------------------
@@ -137,6 +137,19 @@ expenses_df = filtered_df[filtered_df["type"] == "Expense"]
 income_df = filtered_df[filtered_df["type"] == "Income"]
 
 
+# Chart 2: Expenses by Category
+st.subheader("By Category")
+
+tab1, tab2 = st.tabs(["Expenses", "Income"])
+
+with tab1:
+    st.subheader("Expenses by Category")
+    st.altair_chart(bar_chart_by_category(expenses_df), width='stretch')
+with tab2:
+    st.subheader("Income by Category")
+    st.altair_chart(bar_chart_by_category(income_df), width='stretch')
+
+
 
 # Chart 3: Tables
 
@@ -158,23 +171,9 @@ with col2:
     st.subheader("Income by Label")
     st.table(get_transactions_by_labels_sorted(income_df))
 
-# ------------------------------------------
-# 4. Visualizations
-# ------------------------------------------
-# Chart 1: Transactions bar side by side
-render_transactions_tabbed_chart(filtered_df, granularity)
 
 
-# Chart 2: Expenses by Category
-st.subheader("By Category")
 
-tab1, tab2 = st.tabs(["Expenses", "Income"])
 
-with tab1:
-    st.subheader("Expenses by Category")
-    st.altair_chart(bar_chart_by_category(expenses_df), width='stretch')
-with tab2:
-    st.subheader("Income by Category")
-    st.altair_chart(bar_chart_by_category(income_df), width='stretch')
 
 

@@ -32,8 +32,8 @@ bi_tables_page = st.Page("pages/3_data_build/3_bi_tables.py", title="BI Tables",
 
 # current page
 pg = st.navigation({
-    "Reports": [overview_page, transactions_page, budgets_page, income_page],
-    "Tools": [uploads_page, explore_page, validations_page, search_page],
+    "Reports": [overview_page, trends_page, transactions_page, budgets_page, income_page],
+    "Tools": [explore_page, validations_page, search_page, uploads_page],
     "Dev": [staging_page, marts_page, bi_tables_page]
 })
 
