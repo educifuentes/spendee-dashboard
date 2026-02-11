@@ -1,8 +1,3 @@
-"""
-Fact table for transactions.
-Enriches staging data with budget categories and derived columns.
-Final step of the csv cleaning pipeline. Ready to be loaded into the supabase database.
-"""
 import pandas as pd
 
 from models.staging._stg_spendee__transactions import stg_spendee__transactions
@@ -11,28 +6,42 @@ from utilities.transforms import create_period_columns, create_universal_amount
 from utilities.constants.budgets import BUDGETS
 
 
-def fct_transactions() -> pd.DataFrame:
-    """
-    Create the transactions fact table.
-    
-    Transforms:
-        - Maps categories to budget groups
-        - Adds period columns (year, month, quarter)
-        - Adds universal amount in CLP
-        - Reorders columns for better readability
-    
-    Returns:
-        pd.DataFrame: Enriched transactions fact table
-    """
+def fct_transactions():
     # Load staging data
     df = stg_spendee__transactions()
+
+    # rename columns
+    # all to lowe case snake case
+
+    rename_dict = {
+        "Date": "date",
+        "Wallet": "wallet",
+        "Type": "type",
+        "Category name": "category",
+        "Amount": "amount",
+        "Author": "author",
+        "Currency": "currency",
+        "Note": "note",
+        "Labels": "labels",
+    }
+
+    df.rename(columns=rename_dict, inplace=True)
     
+    # new columns
+    # df["id"] = df["record_hash"]
+  
     # Enrich with budget category mapping
     df["budget"] = df["category"].map(BUDGETS).fillna("Otros")
     
-    # Add derived columns
+    # Add  derived columns
     df = create_period_columns(df)
     df = create_universal_amount(df)
+
+    # transform
+    df["amount"] = df["amount"].abs()
+
+    # drop columns
+    df = df.drop(columns=["author"])
     
     # Reorder columns: place amount_universal_clp after currency
     cols = df.columns.tolist()

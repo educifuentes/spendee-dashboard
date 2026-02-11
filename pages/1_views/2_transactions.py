@@ -1,6 +1,6 @@
 import streamlit as st
 from src.data_preparation import load_transactions
-from src.utils import format_currency_columns
+from utilities.ui_components.column_formatting import format_currency_columns
 
 df = load_transactions()
 

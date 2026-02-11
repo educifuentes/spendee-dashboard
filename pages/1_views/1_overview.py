@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
-from src.data_preparation import load_transactions
+from models.marts._fct_transactions import fct_transactions
+
 from utilities.transforms import (
     filter_by_date_range,
     get_current_month_expenses,
@@ -23,15 +23,14 @@ from src.utils import setup_period_selection, get_wallet_options
 
 
 # Load data from Supabase
-all_transactions = load_transactions()
+fct_transactions_df = fct_transactions()
 
-now = datetime.now()
 
 
 st.title(":material/paid: Spendee Expense Dashboard")
 st.subheader("Overview of your expenses and income - Test Render")
 
-st.write("Data range is from " + all_transactions["date"].min().strftime("%Y-%m-%d") + " to " + all_transactions["date"].max().strftime("%Y-%m-%d"))
+st.write("Data range is from " + fct_transactions_df["date"].min().strftime("%Y-%m-%d") + " to " + fct_transactions_df["date"].max().strftime("%Y-%m-%d"))
 
 st.write("test google build")
 
@@ -43,8 +42,8 @@ st.write("test google build")
 col1, col2, col3, col4 = st.columns(4)
 
 # Current month expenses with percentage change
-current_month_total = get_current_month_expenses(all_transactions)
-last_month_total = get_last_month_expenses(all_transactions)
+current_month_total = get_current_month_expenses(fct_transactions_df)
+last_month_total = get_last_month_expenses(fct_transactions_df)
 
 if last_month_total > 0:
     pct_change = ((current_month_total - last_month_total) / last_month_total) * 100
@@ -65,12 +64,12 @@ col2.metric(
 
 col3.metric(
     "Current Month Income",
-    f"${get_current_month_income(all_transactions):,.0f}"
+    f"${get_current_month_income(fct_transactions_df):,.0f}"
 )
 
 col4.metric(
     "Last Month Income",
-    f"${get_last_month_income(all_transactions):,.0f}"
+    f"${get_last_month_income(fct_transactions_df):,.0f}"
 )
 
 
@@ -82,7 +81,7 @@ granularity_key = "granularity"
 selected_period_key = "selected_period_label"
 
 granularity, selected_period_label, period_options, period_values, default_index = setup_period_selection(
-    all_transactions,
+    fct_transactions_df,
     get_available_periods,
     granularity_key=granularity_key,
     selected_period_key=selected_period_key
@@ -94,7 +93,7 @@ st.title(f"{selected_period_label} ")
 # Period selector filters UI
 
 
-wallet_options = get_wallet_options(all_transactions)
+wallet_options = get_wallet_options(fct_transactions_df)
 
 col1, col2, col3 = st.columns(3, gap="medium", width=800)
 
@@ -130,7 +129,7 @@ start_date, end_date = get_period_dates(granularity, selected_period_value)
 # ------------------------------------------
 
 # Re-apply filters to dataframe with updated dates
-filtered_df = all_transactions.copy()
+filtered_df = fct_transactions_df.copy()
 filtered_df = filter_by_date_range(filtered_df, start_date, end_date)
 
 if selected_wallet != "All":

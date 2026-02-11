@@ -1,28 +1,9 @@
-"""
-Data transformation and aggregation functions for the dashboard.
-"""
+
 import pandas as pd
 from pathlib import Path
 from datetime import datetime, timedelta
 
 
-# ==========================================
-# Data Loading
-# ==========================================
-def load_clean_data():
-    """Load cleaned expense data."""
-    data_path = Path(__file__).parent.parent / "data" / "clean" / "expenses_main-clp_clean.csv"
-    df = pd.read_csv(data_path)
-    print(f"Data loaded successfully: {df.shape[0]} rows, {df.shape[1]} columns")
-    
-    df["date"] = pd.to_datetime(df["date"])
-    print(f"Date column cast to pandas datetime format: {df['date'].dtype}")
-    return df
-
-
-# ==========================================
-# Data Transformation
-# ==========================================
 def create_period_columns(df):
     """Create day, week, month, year columns from date."""
     df["day"] = df["date"].dt.strftime("%Y-%m-%d")
