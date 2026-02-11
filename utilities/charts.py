@@ -198,24 +198,40 @@ def bar_chart_by_category(df):
     # Get unique categories in the dataframe
     categories = get_categories_ranked_by_amount(df)
     
-    chart = (
-        alt.Chart(df)
-        .mark_bar()
-        .encode(
-            x=alt.X("category:N", title="Category", sort=categories),
-            y=alt.Y("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="~s")),
-            color=alt.Color(
-                "category:N",
-                legend=None
-            ),
-            tooltip=["category", alt.Tooltip("amount_universal_clp:Q", format="~s", title="Amount"), "note", "labels"]
-        )
-        .properties(
-            width="container",
-            height=400,
-        )
+    # Base chart
+    base = alt.Chart(df).encode(
+        x=alt.X("category:N", title="Category", sort=categories)
     )
-    return chart
+    
+    # Bar layer with borders between stacked items
+    bars = base.mark_bar(
+        stroke="slategray",
+        strokeWidth=0.5
+    ).encode(
+        y=alt.Y("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f")),
+        color=alt.Color(
+            "category:N",
+            legend=None
+        ),
+        tooltip=["category", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels"]
+    )
+    
+    # Text layer for total amount at the top of each bar
+    text = base.mark_text(
+        align='center',
+        baseline='bottom',
+        dy=-10,
+        fontWeight='bold',
+        color='white'
+    ).encode(
+        y=alt.Y("sum(amount_universal_clp):Q", stack=None),
+        text=alt.Text("sum(amount_universal_clp):Q", format="$,.0f")
+    )
+    
+    return (bars + text).properties(
+        width="container",
+        height=500,
+    )
 
 
 def chart_top_expenses_by_label(df):
