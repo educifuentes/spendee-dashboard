@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from models.marts._fct_transactions import fct_transactions
+from models.marts.bi_transactions import bi_transactions
 from utilities.data_transformations.filtering import filter_by_date_range
 from utilities.data_transformations.aggregations import (
     get_current_month_expenses,
@@ -23,7 +23,7 @@ from utilities.charts import (
 from utilities.misc import setup_period_selection, get_wallet_options
 
 # 1. Load Data
-fct_transactions_df = fct_transactions()
+fct_transactions_df = bi_transactions()
 
 # 2. Header & Metrics
 st.title(":material/paid: Spendee Expense Dashboard")

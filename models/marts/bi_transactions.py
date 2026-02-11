@@ -2,20 +2,19 @@ import pandas as pd
 
 from models.marts._fct_transactions import fct_transactions
 
-from utilities.data_transformations.enrichment import create_period_columns, create_universal_amount
 from utilities.constants.budgets import BUDGETS
-
+from utilities.data_transformations.enrichment import create_period_columns, create_universal_amount
 
 def bi_transactions():
     df = fct_transactions()
 
-    # Enrich with budget category mapping
-    df["budget"] = df["category"].map(BUDGETS).fillna("Otros")
-    
-    # Add  derived columns
+    # new columns
     df = create_period_columns(df)
     df = create_universal_amount(df)
 
+    # Enrich with budget category mapping
+    df["budget"] = df["category"].map(BUDGETS).fillna("Otros")
+    
     # transform
     df["amount"] = df["amount"].abs()
 

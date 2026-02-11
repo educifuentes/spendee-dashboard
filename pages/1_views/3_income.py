@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 
-from models.marts._fct_transactions import fct_transactions
+from models.marts.bi_transactions import bi_transactions
 
 from utilities.misc import st_dataframe_helper
 
 from models.marts.pivot_tables._pivot_income_month import render_income_pivot_table
 
-df = fct_transactions()
+df = bi_transactions()
 
 st.title(":material/inventory_2: Income Report")
 
