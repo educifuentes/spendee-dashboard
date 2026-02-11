@@ -5,3 +5,4 @@ supabase
 tomli>=2.0.0
 yfinance
 authlib>=1.3.2
+pyyaml
