@@ -1,7 +1,7 @@
-
 import pandas as pd
 from pathlib import Path
 from datetime import datetime, timedelta
+from utilities.data_transformations.rates import get_usd_clp_rates_map
 
 
 def create_period_columns(df):
@@ -23,10 +23,7 @@ def create_universal_amount(df):
         df["amount_universal"] = df["amount"]
         return df
 
-    # Approximate USD to CLP rates (First day of month)
-    rates_path = Path(__file__).parent / "constants" / "usd_clp_rates.csv"
-    rates_df = pd.read_csv(rates_path)
-    rates_map = dict(zip(rates_df["month"], rates_df["rate"]))
+    rates_map = get_usd_clp_rates_map()
 
     df["rate"] = df["date"].dt.strftime("%Y-%m").map(rates_map).fillna(900)
     df["amount_universal_clp"] = df.apply(lambda x: x["amount"] * x["rate"] if x["currency"] == "USD" else x["amount"], axis=1).round(0)
@@ -116,13 +113,6 @@ def get_available_periods(df, period_type):
 def get_period_dates(granularity, selected_period_value):
     """
     Calculate start and end dates based on granularity and period value.
-    
-    Args:
-        granularity: "Month", "Week", or "Year"
-        selected_period_value: String representation of the period (e.g. "2023-01", "2023-W01", "2023")
-        
-    Returns:
-        tuple: (start_date, end_date) as pandas Timestamps
     """
     if granularity == "Month":
         # Parse YYYY-MM format
@@ -331,12 +321,6 @@ def get_top_expenses_by_label(df, n=10, year=None, month=None):
 def get_expenses_by_budget_month(df, start_date=None, end_date=None):
     """
     Get expenses aggregated by budget and month.
-    Args:
-        df: DataFrame with 'date', 'amount', and 'budget' columns
-        start_date: Optional start date to filter (default: None for all data)
-        end_date: Optional end date to filter (default: None for all data)
-    Returns:
-        DataFrame with columns: 'date', 'budget', 'amount' (date column preserved for Altair)
     """
     filtered = df.copy()
     

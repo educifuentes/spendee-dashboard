@@ -18,21 +18,16 @@ from utilities.charts import (
     bar_chart_by_category,
     bar_chart_transactions_by_type
 )
-from src.utils import setup_period_selection, get_wallet_options
+from utilities.misc import setup_period_selection, get_wallet_options
 
 
 
 # Load data from Supabase
 fct_transactions_df = fct_transactions()
 
-
-
 st.title(":material/paid: Spendee Expense Dashboard")
-st.subheader("Overview of your expenses and income - Test Render")
 
 st.write("Data range is from " + fct_transactions_df["date"].min().strftime("%Y-%m-%d") + " to " + fct_transactions_df["date"].max().strftime("%Y-%m-%d"))
-
-st.write("test google build")
 
 
 # ------------------------------------------

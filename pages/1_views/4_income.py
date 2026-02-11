@@ -1,6 +1,7 @@
 import streamlit as st
+import pandas as pd
 from src.data_preparation import load_transactions
-from src.utils import st_dataframe_helper
+from utilities.misc import st_dataframe_helper
 
 df = load_transactions()
 

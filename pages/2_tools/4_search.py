@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from src.data_preparation import load_transactions
-from src.utils import st_dataframe_helper
+from utilities.misc import st_dataframe_helper
 
 # Page setup
 st.set_page_config(page_title="Search Transactions", page_icon=":material/search:")

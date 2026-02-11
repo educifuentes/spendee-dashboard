@@ -4,7 +4,7 @@ Data Viewer page - Display and filter transactions dataframe.
 import pandas as pd
 import streamlit as st
 from src.data_preparation import load_transactions
-from src.utils import filter_dataframe
+from utilities.misc import filter_dataframe, st_dataframe_helper
 
 
 # Page content
