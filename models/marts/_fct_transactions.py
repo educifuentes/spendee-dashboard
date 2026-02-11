@@ -2,7 +2,7 @@ import pandas as pd
 
 from models.staging._stg_spendee__transactions import stg_spendee__transactions
 
-from utilities.transforms import create_period_columns, create_universal_amount
+from utilities.data_transformations.enrichment import create_period_columns, create_universal_amount
 from utilities.constants.budgets import BUDGETS
 
 

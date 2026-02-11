@@ -3,7 +3,7 @@ import streamlit as st
 from datetime import datetime
 from src.data_preparation import load_transactions
 
-from utilities.transforms import get_expenses_by_budget_month
+from utilities.data_transformations.aggregations import get_expenses_by_budget_month
 from src.charts import chart_expenses_by_budget_month
 
 

@@ -7,7 +7,7 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
-from utilities.transforms import get_categories_ranked_by_amount
+from utilities.data_transformations.aggregations import get_categories_ranked_by_amount
 
 
 # ==========================================

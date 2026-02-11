@@ -1,11 +1,6 @@
-"""
-Database access functions for Supabase using Streamlit secrets. Loads data and ensures correct dtypes, and creates additional columns.
-"""
-import streamlit as st
 import pandas as pd
-
 from utilities.data_conection import get_supabase
-from utilities.transforms import create_period_columns, create_universal_amount
+from utilities.data_transformations.enrichment import create_period_columns, create_universal_amount
 
 
 @st.cache_data(ttl=600)
