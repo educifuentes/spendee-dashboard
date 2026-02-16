@@ -20,7 +20,7 @@ if "date" in df.columns:
 
 st.markdown(f"**Data range:** {df['date'].min().date()} to {df['date'].max().date()}")
 
-display_columns = ["date", "category", "labels", "note", "type", "amount", "amount_universal_clp"]
+display_columns = ["date", "category", "labels", "note", "type", "amount", "amount_universal_clp", "budget"]
 
 # Display styled dataframe using utility function
 dataframe_column_display(

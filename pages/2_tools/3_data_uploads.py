@@ -10,6 +10,12 @@ from utilities.ui_components.icons import ICONS
 # Ensure scripts folder is importable
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+# current_dir=.../pages/2_tools -> dirname -> pages -> dirname -> spendee-dashboard
+# Wait, my logic was:
+# current_dir (2_tools) -> dirname (pages) -> dirname (spendee-dashboard)
+# So only TWO dirname calls needed on current_dir.
+# The previous code had THREE. Let's fix it to use TWO.
+project_root = os.path.dirname(os.path.dirname(current_dir))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
