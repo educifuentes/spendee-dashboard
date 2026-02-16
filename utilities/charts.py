@@ -189,26 +189,26 @@ def chart_expenses_by_budget_month(df):
 # ==========================================
 def bar_chart_by_category(df):
     """
-    Create vertical bar chart for expenses by category.
+    Create horizontal bar chart for expenses by category.
     
     Args:
-        df: DataFrame with 'category' and 'amount' columns
+        df: DataFrame with 'category' and 'amount_universal_clp' columns
     """
     
     # Get unique categories in the dataframe
     categories = get_categories_ranked_by_amount(df)
     
-    # Base chart
+    # Base chart - Swapped to Y axis for horizontal orientation
     base = alt.Chart(df).encode(
-        x=alt.X("category:N", title="Category", sort=categories)
+        y=alt.Y("category:N", title="Category", sort=categories)
     )
     
-    # Bar layer with borders between stacked items
+    # Bar layer - Quantitative value on X axis
     bars = base.mark_bar(
         stroke="slategray",
         strokeWidth=0.5
     ).encode(
-        y=alt.Y("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f")),
+        x=alt.X("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f")),
         color=alt.Color(
             "category:N",
             legend=None
@@ -216,15 +216,15 @@ def bar_chart_by_category(df):
         tooltip=["category", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels"]
     )
     
-    # Text layer for total amount at the top of each bar
+    # Text layer for total amount at the end of each bar
     text = base.mark_text(
-        align='center',
-        baseline='bottom',
-        dy=-10,
+        align='left',
+        baseline='middle',
+        dx=5,
         fontWeight='bold',
         color='white'
     ).encode(
-        y=alt.Y("sum(amount_universal_clp):Q", stack=None),
+        x=alt.X("sum(amount_universal_clp):Q", stack=None),
         text=alt.Text("sum(amount_universal_clp):Q", format="$,.0f")
     )
     
