@@ -1,14 +1,10 @@
 import pandas as pd
 import hashlib
-import json
-from pathlib import Path
+from utilities.constants.budgets import BUDGETS
 
 def load_budgets():
-    """Load budget category mappings from JSON file."""
-    # Adjusted path assuming this file is in utilities/data_transformations/
-    budgets_path = Path(__file__).parent.parent / "constants" / "budgets.json"
-    with open(budgets_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Returns the budget category mapping-."""
+    return BUDGETS
 
 def _stable_str(x) -> str:
     if pd.isna(x):

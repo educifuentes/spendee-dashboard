@@ -125,10 +125,12 @@ def chart_expenses_by_period(df, period="Month"):
     return chart
 
 
+from utilities.constants.budgets import SORT_ORDER
+
 def chart_expenses_by_budget_month(df):
     """
     Create stacked bar chart for expenses by budget and month.
-    Budgets are ordered: "Gastos fijos" first, then "Chao culpa", then others.
+    Budgets are ordered according to SORT_ORDER in utilities.constants.budgets.
     Args:
         df: DataFrame with 'date', 'budget', and 'amount' columns
     """
@@ -137,21 +139,23 @@ def chart_expenses_by_budget_month(df):
     # Load budget colors
     budget_colors = load_budget_colors()
     
-    # Define budget order: "Gastos fijos" first, then "Chao culpa", then others
-    budget_order = ["Gastos fijos", "Chao culpa"]
+    # Define budget order based on SORT_ORDER
+    # Sort dictionaries by value to get our ordered list
+    ordered_budgets = sorted(SORT_ORDER.keys(), key=lambda x: SORT_ORDER[x])
+    # Ensure any budgets not in SORT_ORDER are also included at the end
     all_budgets = df["budget"].unique().tolist()
-    other_budgets = [b for b in all_budgets if b not in budget_order]
-    ordered_budgets = budget_order + sorted(other_budgets)
+    missing_budgets = sorted([b for b in all_budgets if b not in SORT_ORDER])
+    final_order = ordered_budgets + missing_budgets
     
     # Create ordered categorical for budget
-    df["budget"] = pd.Categorical(df["budget"], categories=ordered_budgets, ordered=True)
+    df["budget"] = pd.Categorical(df["budget"], categories=final_order, ordered=True)
     
     # Sort by date and budget
     df = df.sort_values(["date", "budget"])
     
     # Build color scale domain and range from budget colors
-    domain = ordered_budgets
-    range_colors = [budget_colors.get(budget, "#808080") for budget in ordered_budgets]
+    domain = final_order
+    range_colors = [budget_colors.get(budget, "#808080") for budget in final_order]
     
     chart = (
         alt.Chart(df)
@@ -166,7 +170,7 @@ def chart_expenses_by_budget_month(df):
                 "budget:N",
                 title="Budget",
                 scale=alt.Scale(domain=domain, range=range_colors),
-                sort=ordered_budgets
+                sort=final_order
             ),
             tooltip=[
                 alt.Tooltip("month(date):O", title="Month"),
@@ -195,12 +199,12 @@ def bar_chart_by_category(df):
         df: DataFrame with 'category' and 'amount_universal_clp' columns
     """
     
-    # Get unique categories in the dataframe
-    categories = get_categories_ranked_by_amount(df)
+    # Get unique items in the dataframe ranked by amount
+    items = get_categories_ranked_by_amount(df, column="category")
     
     # Base chart - Swapped to Y axis for horizontal orientation
     base = alt.Chart(df).encode(
-        y=alt.Y("category:N", title="Category", sort=categories)
+        y=alt.Y("category:N", title="Category", sort=items)
     )
     
     # Bar layer - Quantitative value on X axis
@@ -213,7 +217,7 @@ def bar_chart_by_category(df):
             "category:N",
             legend=None
         ),
-        tooltip=["category", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels"]
+        tooltip=["category", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels", alt.Tooltip("date:T", format="%Y-%m-%d", title="Date")]
     )
     
     # Text layer for total amount at the end of each bar
@@ -231,6 +235,62 @@ def bar_chart_by_category(df):
     return (bars + text).properties(
         width="container",
         height=500,
+    )
+
+
+def bar_chart_by_budget(df):
+    """
+    Create horizontal bar chart for expenses by budget.
+    
+    Args:
+        df: DataFrame with 'budget' and 'amount_universal_clp' columns
+    """
+    
+    # Define budget order based on SORT_ORDER in utilities.constants.budgets
+    ordered_budgets = sorted(SORT_ORDER.keys(), key=lambda x: SORT_ORDER[x])
+    # Ensure any budgets not in SORT_ORDER are also included at the end
+    all_budgets = df["budget"].unique().tolist()
+    missing_budgets = sorted([b for b in all_budgets if b not in SORT_ORDER])
+    final_order = ordered_budgets + missing_budgets
+    
+    # Load budget colors
+    budget_colors = load_budget_colors()
+    range_colors = [budget_colors.get(budget, "#808080") for budget in final_order]
+    
+    # Base chart
+    base = alt.Chart(df).encode(
+        y=alt.Y("budget:N", title="Budget", sort=final_order)
+    )
+    
+    # Bar layer
+    bars = base.mark_bar(
+        stroke="slategray",
+        strokeWidth=0.5
+    ).encode(
+        x=alt.X("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f")),
+        color=alt.Color(
+            "budget:N",
+            scale=alt.Scale(domain=final_order, range=range_colors),
+            legend=None
+        ),
+        tooltip=["budget", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels", alt.Tooltip("date:T", format="%Y-%m-%d", title="Date")]
+    )
+    
+    # Text layer
+    text = base.mark_text(
+        align='left',
+        baseline='middle',
+        dx=5,
+        fontWeight='bold',
+        color='white'
+    ).encode(
+        x=alt.X("sum(amount_universal_clp):Q", stack=None),
+        text=alt.Text("sum(amount_universal_clp):Q", format="$,.0f")
+    )
+    
+    return (bars + text).properties(
+        width="container",
+        height=300,
     )
 
 

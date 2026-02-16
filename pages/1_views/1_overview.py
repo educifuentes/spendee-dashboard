@@ -18,6 +18,7 @@ from utilities.data_transformations.periods import (
 from models.marts.metrics.expense_metrics import get_mtd_expense_comparison
 from utilities.charts import (
     bar_chart_by_category,
+    bar_chart_by_budget,
     render_transactions_tabbed_chart
 )
 from utilities.misc import setup_period_selection, get_wallet_options
@@ -87,8 +88,10 @@ with t2:
 
 st.divider()
 
-# new bar chart using budget column
+st.subheader("By Budget")
+st.altair_chart(bar_chart_by_budget(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 
+st.divider()
 # 5. Tables
 col_a, col_b = st.columns(2)
 with col_a:

@@ -1,29 +1,29 @@
-BUDGETS = {
-  "Rent": "Gastos fijos",
-  "Sport": "Gastos fijos",
-  "Personal Care": "Gastos fijos",
-  "Groceries": "Gastos fijos",
-  "Utilities": "Gastos fijos",
-  "Coffee-Snacks": "Chao culpa",
-  "Restaurant": "Chao culpa",
-  "Alcohol": "Chao culpa",
-  "Activities": "Chao culpa",
-  "Shopping": "Chao culpa",
-  "Travel": "Viajes",
-  "Investments": "Inversion",
-  "Savings": "Ahorro",
-  "Snacks & Coffee": "Chao culpa",
-  "Subscriptions": "Gastos fijos",
-  "Transport": "Gastos fijos",
-  "Insurance": "Gastos fijos",
-  "Healthcare": "Gastos fijos",
-  "Education": "Inversion",
-  "Gifts": "Chao culpa",
-  "Other": "Gastos fijos",
-  "Pharmacy ": "Gastos fijos",
-  "Maintenance ": "Gastos fijos",
-  "Tax": "Gastos fijos",
-  "Acommodation": "Viajes",
-  "Flights": "Viajes"
+GASTOS_FIJOS = [
+    "Rent", "Personal Care", "Groceries", "Utilities", "Subscriptions", 
+    "Transport", "Insurance", "Healthcare", "Other", "Pharmacy ", 
+    "Maintenance ", "Tax", "Acommodation"
+]
+
+SECUNDARIOS = ["Sport", "Education", "Travel"]
+
+CHAO_CULPA = [
+    "Coffee-Snacks", "Restaurant", "Alcohol", "Activities", 
+    "Shopping", "Snacks & Coffee", "Gifts"
+]
+
+PASIVOS = ["Mortgage", "Rental Apartment", "Investments", "Savings"]
+
+# Build the BUDGETS dictionary from the categorical lists
+BUDGETS = {}
+for cat in GASTOS_FIJOS: BUDGETS[cat] = "Gastos fijos"
+for cat in SECUNDARIOS: BUDGETS[cat] = "Secundarios"
+for cat in CHAO_CULPA: BUDGETS[cat] = "Chao culpa"
+for cat in PASIVOS: BUDGETS[cat] = "Pasivos"
+
+SORT_ORDER = {
+    "Gastos fijos": 1,
+    "Secundarios": 2,
+    "Chao culpa": 3,
+    "Pasivos": 4
 }
 

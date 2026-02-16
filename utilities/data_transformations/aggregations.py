@@ -117,9 +117,9 @@ def get_transactions_by_labels_sorted(df):
     
     return res.rename(columns={"label": "labels", "amount_fmt": "amount"}).set_index("labels")[["amount", "transaction_label"]]
 
-def get_categories_ranked_by_amount(df):
-    """Get list of categories ranked by total amount (descending)."""
-    return df.groupby("category")["amount_universal_clp"].sum().sort_values(ascending=False).index.tolist()
+def get_categories_ranked_by_amount(df, column="category"):
+    """Get list of categories (or budgets) ranked by total amount (descending)."""
+    return df.groupby(column)["amount_universal_clp"].sum().sort_values(ascending=False).index.tolist()
 
 def get_top_expenses_by_label(df, n=10, year=None, month=None):
     """
