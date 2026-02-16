@@ -1,15 +1,18 @@
 ICONS = {
-    # VALIDATIONS   
+    # pages
+    'upload': ":material/upload:",
+    'data_explorer': ":material/search:",
+    'dashboard': ":material/dashboard:",
+    'settings': ":material/settings:",
+    # others
+    "documentation": ":material/article:",
+    "metrics": ":material/calculate:",
+    "not_apply": ":material/circle:",
+    # validations   
     "check": ":material/check_box:",
     "warning": ":material/warning:",
     "close": ":material/close:",
-    # PAGINAS
-    "locales": ":material/sports_bar:",
-    "censos": ":material/checklist_rtl:",
-    "bases_ccu": ":material/assignment:",
-    "contratos": ":material/contract:",
-    # otros
-    "documentation": ":material/article:",
-    "metrics": ":material/calculate:",
-    "not_apply": ":material/circle:"
 }
+
+
+# Find icons names in https://fonts.google.com/icons

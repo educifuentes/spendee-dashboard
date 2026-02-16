@@ -1,12 +1,20 @@
 """
-Upload Spendee CSV and sync to Supabase database.
+Upload Spendee CSV and sync to Cloud SQL database.
 """
 import pandas as pd
 import streamlit as st
+import sys
+import os
+from utilities.ui_components.icons import ICONS
+
+# Ensure scripts folder is importable
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from utilities.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash, load_budgets
-from utilities.data_conection import get_supabase
-
+from scripts.add_new_transactions import get_existing_hashes, insert_new_transactions
 
 def clean_raw_spendee_csv(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -48,16 +56,13 @@ def clean_raw_spendee_csv(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-
 @st.cache_data(ttl=300)
-def get_existing_hashes() -> set:
-    """Get all existing record_hashes from Supabase."""
-    supabase = get_supabase()
-    response = supabase.table("transactions").select("record_hash").execute()
-    return {row["record_hash"] for row in response.data if row.get("record_hash")}
+def get_cached_existing_hashes() -> set:
+    """Wrapper to cache existing hashes from Cloud SQL."""
+    return get_existing_hashes()
 
 
-st.title("📤 Upload Data")
+st.title(f"{ICONS['upload']} Upload Data to Cloud SQL")
 st.write("Go to Spendee App and then Settings -> Advanced -> Export")
 
 uploaded_file = st.file_uploader("Choose CSV file", type="csv", key="csv_uploader")
@@ -75,8 +80,8 @@ if uploaded_file is not None:
         st.metric("Cleaned rows", len(df_cleaned))
         
         # Get existing hashes
-        with st.spinner("Checking for duplicates..."):
-            existing_hashes = get_existing_hashes()
+        with st.spinner("Checking for duplicates (querying Cloud SQL)..."):
+            existing_hashes = get_cached_existing_hashes()
         
         # Filter to only new records
         new_transactions = df_cleaned[~df_cleaned["record_hash"].isin(existing_hashes)].copy()
@@ -92,38 +97,18 @@ if uploaded_file is not None:
             st.subheader("Preview (first 20 rows)")
             st.dataframe(new_transactions.head(20), width='stretch')
             
-            # Convert to dict for Supabase
-            records = new_transactions.to_dict("records")
-            
-            # Upsert to Supabase
+            # Insert to SQL
             if st.button("Upload to Database", type="primary"):
-                with st.spinner("Uploading to Supabase..."):
+                with st.spinner("Uploading to Cloud SQL..."):
                     try:
-                        supabase = get_supabase()
-                        # Convert datetime columns to strings and handle NaN values for JSON serialization
-                        for record in records:
-                            for key, value in record.items():
-                                # Convert datetime to ISO format string
-                                if isinstance(value, pd.Timestamp):
-                                    if pd.notna(value):
-                                        record[key] = value.isoformat()
-                                    else:
-                                        record[key] = None
-                                # Convert NaN values to None (becomes null in JSON)
-                                elif pd.isna(value):
-                                    record[key] = None
+                        rows_inserted = insert_new_transactions(new_transactions)
                         
-                        response = supabase.table("transactions").upsert(
-                            records,
-                            on_conflict="record_hash"
-                        ).execute()
-                        
-                        rows_upserted = len(records)
-                        st.success(f"✅ Successfully uploaded {rows_upserted} new records!")
+                        st.success(f"✅ Successfully uploaded {rows_inserted} new records!")
                         
                         # Clear cache and rerun
                         st.cache_data.clear()
-                        st.rerun()
+                        # Optional: rerun to reset state
+                        # st.rerun()
                         
                     except Exception as e:
                         st.error(f"Error uploading to database: {str(e)}")
