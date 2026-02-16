@@ -1,9 +1,10 @@
+"""This script reloads all transaction data from a CSV file into a Google Cloud SQL PostgreSQL database, clearing existing records first."""
+
 import os
 import pandas as pd
 from google.cloud.sql.connector import Connector
 import sqlalchemy
 from sqlalchemy import text
-
 import tomli
 
 # Configuration
@@ -20,6 +21,7 @@ TABLE_NAME = db_config["TABLE_NAME"]
 CSV_FILE = db_config["CSV_FILE"]
 
 def getconn():
+    """Establishes a connection to the Cloud SQL instance."""
     with Connector() as connector:
         conn = connector.connect(
             INSTANCE_CONNECTION_NAME,
@@ -30,10 +32,13 @@ def getconn():
         )
         return conn
 
-def create_table(engine):
-    """Creates the transactions table with appropriate data types."""
-    # Schema inference is done manually based on the known CSV structure
-    # date,wallet,type,category,amount,currency,note,labels,author,record_hash,id
+def check_and_create_table(engine):
+    """
+    Checks if the transactions table exists and creates it if not.
+    Schema is based on the known CSV structure.
+    """
+    print(f"Checking if table '{TABLE_NAME}' exists...")
+    # Schema definition
     create_stmt = text(f"""
         CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
             date TIMESTAMPTZ,
@@ -52,108 +57,68 @@ def create_table(engine):
     with engine.connect() as conn:
         conn.execute(create_stmt)
         conn.commit()
-    print(f"Table '{TABLE_NAME}' checked/created.")
+    print(f"Table '{TABLE_NAME}' check complete.")
 
-def load_data(engine, csv_path):
-    """Loads data from CSV into the table using efficient bulk loading."""
+def clear_table(engine):
+    """
+    Deletes all rows from the transactions table using TRUNCATE.
+    """
+    print(f"Clearing all data from '{TABLE_NAME}'...")
+    with engine.connect() as conn:
+        # TRUNCATE is faster than DELETE for removing all rows
+        conn.execute(text(f"TRUNCATE TABLE {TABLE_NAME};"))
+        conn.commit()
+    print(f"All rows deleted from '{TABLE_NAME}'.")
+
+def reload_all_transactions_to_database(engine, csv_path):
+    """
+    Orchestrates the reloading of all transaction data:
+    1. Ensures the table exists.
+    2. Clears the table.
+    3. Loads fresh data from the CSV.
+    """
     if not os.path.exists(csv_path):
         print(f"Error: File '{csv_path}' not found.")
         return
 
-    # Read CSV with pandas to handle initial parsing and potential cleaning
-    # We read everything as text first to ensure we handle nulls correctly for COPY
-    # But for efficient COPY we need to match the DB types or use CSV format
-    # Let's use pandas to writes to a buffer in a format Postgres COPY accepts
+    # 1. Ensure table structure is present
+    check_and_create_table(engine)
     
-    df = pd.read_csv(csv_path)
+    # 2. Clear existing data
+    clear_table(engine)
     
-    # Ensure date is parsed correctly (Postgres expects ISO 8601)
-    df['date'] = pd.to_datetime(df['date'])
+    # 3. Read and Prepare Data
+    print(f"Reading data from '{csv_path}'...")
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return
+        
+    if df.empty:
+        print("CSV file is empty. Nothing to load.")
+        return
     
-    # Connect with raw pg8000 connection for COPY support
-    # SQLAlchemy doesn't natively support COPY easily with the connector in the middle
-    # But we can get the raw connection from the engine
+    # Ensure date column is parsed as datetime (Postgres expects appropriate format)
+    if 'date' in df.columns:
+        df['date'] = pd.to_datetime(df['date'])
     
-    # Alternative: Use to_sql with chunksize (slower but safer and easier)
-    # The prompt asks for "\COPY or equivalent method to bulk load... efficiently"
-    # The most efficient way with SQLAlchemy + pg8000 is often to_sql with 'multi' method or raw COPY
+    print(f"Prepared {len(df)} rows for insertion.")
     
-    # Let's try the standard to_sql first as it's robust, 
-    # but for "bulk load efficiently" we should probably use COPY.
-    
-    print(f"Loading {len(df)} rows...")
-    
-    with engine.connect() as conn:
-        # We need a raw cursor for COPY
-        # SQLAlchemy 1.4+ 
-        raw_conn = conn.connection
-        # If using the connector, raw_conn is the pg8000 connection object
-        
-        # We will iterate and use copy_from (pg8000 specific)
-        import io
-        import csv
-        
-        output = io.StringIO()
-        # Header=False, Index=False
-        # Handle Nulls: standard CSV uses empty string for null in some cases or custom
-        # pg8000 copy_from expects data.
-        
-        # Better approach for portability and simplicity with the connector:
-        # Use pandas to_sql with method='multi' and chunksize.
-        # It is reasonably efficient for moderate datasets.
-        # If the dataset is huge, we need COPY.
-        # Given "bulk load the CSV efficiently", I will stick to to_sql default?
-        # No, the user specifically mentioned \COPY.
-        
-        # Let's use the efficient COPY method via a temporary CSV buffer
-        # This preserves the "bulk load" requirement.
-        
-        # Prepare data for COPY
-        # Postgres CSV format: NULL is usually \N or empty string with NULL option
-        
-        # Convert df to CSV string
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False, header=False, sep='\t', na_rep='\\N', quoting=csv.QUOTE_NONE, escapechar='\\')
-        csv_buffer.seek(0)
-        
-        # Determine columns
-        columns = df.columns.tolist()
-        
-        # Get cursor
-        cursor = raw_conn.cursor()
-        
-        # Copy command
-        # pg8000 copy_file is the method
-        # But we have a stream.
-        # pg8000 documentation says: cursor.copy_from(file, table, null='\\N', sep='\t')
-        # wait, cloud sql connector returns a pg8000 connection?
-        # Yes.
-        
-        try:
-             # pg8000's copy_from is deprecated in favor of just executing the COPY command
-             # and writing to the stream?
-             # No, let's use the standard method needed for pg8000
-             # cursor.execute("COPY table FROM STDIN ...")
-             # followed by putting data.
-             
-             # Actually, with the google connector, it might be safer to just use to_sql
-             # The complexity of getting raw COPY right over the connector can be high.
-             # "method=multi" serves "efficiently" well enough for typical script usage.
-             # But let's try to be as robust as possible.
-             
-             # Actually, pandas `to_sql` is arguably the "production ready" way for scripts
-             # unless performance is critical (millions of rows).
-             # Let's use `to_sql` with `chunksize=1000`.
-             
-             df.to_sql(TABLE_NAME, engine, if_exists='append', index=False, chunksize=1000)
-             print("Data loaded successfully using pandas to_sql.")
-             
-        except Exception as e:
-            print(f"Error loading data: {e}")
-            raise e
+    # 4. Insert Data
+    print(f"Inserting data into '{TABLE_NAME}'...")
+    try:
+        # Use 'append' because the table exists (we just cleared it)
+        df.to_sql(TABLE_NAME, engine, if_exists='append', index=False, chunksize=1000)
+        print("Data reloaded successfully.")
+    except Exception as e:
+        print(f"Error inserting data: {e}")
+        # Re-raise or handle as appropriate
+        raise e
 
 def main():
-    # Create the SQLAlchemy engine
+    """Main execution entry point."""
+    # Create the SQLAlchemy engine with the Cloud SQL connector
     # The 'creator' argument specifies the callable that returns the connection
     pool = sqlalchemy.create_engine(
         "postgresql+pg8000://",
@@ -161,10 +126,9 @@ def main():
     )
 
     try:
-        create_table(pool)
-        load_data(pool, CSV_FILE)
+        reload_all_transactions_to_database(pool, CSV_FILE)
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred during execution: {e}")
     finally:
         pool.dispose()
 
