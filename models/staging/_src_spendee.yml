@@ -4,11 +4,11 @@ sources:
     description: raw csv tables exported form spendee app.
     tables:
       - name: main-clp
-        path: seeds/transactions_export_2026-02-10_main-clp.csv
+        path: seeds/transactions_export_main-clp.csv
         description: billetera todo clp
       - name: unfcu
-        path: seeds/transactions_export_2026-02-10_unfcu.csv
+        path: seeds/transactions_export_unfcu.csv
         description: billetera unfcu
       - name: pasivos
-        path: seeds/transactions_export_2026-02-10_pasivos.csv
+        path: seeds/transactions_export_pasivos.csv
         description: pasivos
