@@ -1,24 +1,32 @@
 """
 Data Viewer page - Display and filter transactions dataframe.
 """
-import pandas as pd
 import streamlit as st
-from utilities.data_loading import load_transactions
-from utilities.misc import filter_dataframe, st_dataframe_helper
+import pandas as pd
 
+from models.marts.bi_transactions import bi_transactions
+
+from utilities.ui_components.dataframe_column_display import dataframe_column_display
 
 # Page content
-st.title("📊 Data Viewer")
-
+st.title("Data Explorer")
+    
 # Load data
-df = load_transactions()
-df.sort_values("date", ascending=False, inplace=True)
+df = bi_transactions()
 
-# # Display filtered dataframe
-# filtered_df = filter_dataframe(df)
+# Ensure date is sorted descending
+if "date" in df.columns:
+    df = df.sort_values("date", ascending=False)
 
-# st.write(f"**Filtered transactions:** {len(filtered_df)}")
 st.markdown(f"**Data range:** {df['date'].min().date()} to {df['date'].max().date()}")
 
-st.dataframe(df, width='stretch')
+display_columns = ["date", "category", "labels", "note", "type", "amount", "amount_universal_clp"]
 
+# Display styled dataframe using utility function
+dataframe_column_display(
+    df[display_columns],
+    currency_cols=["amount", "amount_universal_clp"],
+    date_cols=["date"],
+    multiselect_cols=["category"],
+    selectbox_cols=["labels"]
+)
