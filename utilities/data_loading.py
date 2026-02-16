@@ -1,8 +1,8 @@
 import pandas as pd
+import streamlit as st
 from utilities.data_conection import get_supabase
 from utilities.data_transformations.periods import create_period_columns
 from utilities.data_transformations.universal_amount import create_universal_amount
-
 
 @st.cache_data(ttl=600)
 def load_transactions() -> pd.DataFrame:
@@ -31,9 +31,12 @@ def load_transactions() -> pd.DataFrame:
     # Convert to pandas DataFrame
     df = pd.DataFrame(all_rows)
 
+    if df.empty:
+        return df
+
     # add log of the load with date range and number of records
-    print(f"Loaded {len(df)} transactions from Supabase.")
-    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
+    # print(f"Loaded {len(df)} transactions from Supabase.")
+    # print(f"Date range: {df['date'].min()} to {df['date'].max()}")
     
     # Ensure correct dtypes
     if "date" in df.columns:
@@ -49,10 +52,11 @@ def load_transactions() -> pd.DataFrame:
     cols = df.columns.tolist()
     if "amount" in cols and "amount_universal_clp" in cols:
         cols.remove("amount_universal_clp")
-        amount_index = cols.index("currency")
-        cols.insert(amount_index + 1, "amount_universal_clp")
+        if "currency" in cols:
+            amount_index = cols.index("currency")
+            cols.insert(amount_index + 1, "amount_universal_clp")
+        else:
+            cols.append("amount_universal_clp")
         df = df[cols]
 
     return df
-
-

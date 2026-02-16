@@ -4,8 +4,8 @@ Upload Spendee CSV and sync to Supabase database.
 import pandas as pd
 import streamlit as st
 
-from src.clean import add_record_hash, load_budgets
-from src.data_preparation import get_supabase
+from utilities.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash, load_budgets
+from utilities.data_conection import get_supabase
 
 
 def clean_raw_spendee_csv(df: pd.DataFrame) -> pd.DataFrame:

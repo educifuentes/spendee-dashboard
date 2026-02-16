@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from src.data_preparation import load_transactions
+from utilities.data_loading import load_transactions
 from utilities.misc import st_dataframe_helper
 
 # Page setup
