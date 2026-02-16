@@ -87,6 +87,8 @@ with t2:
 
 st.divider()
 
+# new bar chart using budget column
+
 # 5. Tables
 col_a, col_b = st.columns(2)
 with col_a:
