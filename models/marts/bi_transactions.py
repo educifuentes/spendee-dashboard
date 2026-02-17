@@ -1,13 +1,13 @@
 import pandas as pd
 
-from utilities.data_connection_cloud_sql import load_transactions
+from models.staging._stg_spendee__transactions import stg_spendee__transactions
 
 from utilities.constants.budgets import BUDGETS
 from utilities.data_transformations.periods import create_period_columns
 from utilities.data_transformations.universal_amount import create_universal_amount
 
 def bi_transactions():
-    df = load_transactions()
+    df = stg_spendee__transactions()
 
     # new columns
     df = create_period_columns(df)
