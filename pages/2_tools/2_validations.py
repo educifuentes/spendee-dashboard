@@ -1,7 +1,9 @@
 import streamlit as st
 
-import tests.validate_transactions as validate_transactions
 from models.marts._fct_transactions import fct_transactions
+
+import tests.validate_transactions as validate_transactions
+
 
 st.header("Validations")
 

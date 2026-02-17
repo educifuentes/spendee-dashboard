@@ -2,21 +2,27 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-ICONS = {
-    "check": "✅",
-    "close": "❌",
-    "warning": "⚠️"
-}
+from utilities.ui_components.icons import ICONS
+
 
 def validate_transactions(df):
     st.header("Transactions Data Quality Validation")
     
+    # Filter by date (2025 onwards)
+    if not df.empty and 'date' in df.columns:
+        # Convert threshold to match timezone if necessary
+        date_threshold = pd.Timestamp("2025-01-01")
+        if df['date'].dt.tz is not None:
+            date_threshold = date_threshold.tz_localize('UTC')
+        
+        df = df[df['date'] >= date_threshold]
+
     total_filas = len(df)
     if total_filas == 0:
-        st.warning("La tabla de transacciones está vacía.")
+        st.warning("No hay transacciones registradas desde 2025.")
         return
 
-    st.write(f"Total registros a validar: **{total_filas}**")
+    st.write(f"Total registros a validar (2025+): **{total_filas}**")
 
     # 1. Column Date
     st.markdown("### 1. `date` ")
