@@ -54,14 +54,38 @@ def validate_transactions(df):
         st.error(f"{ICONS['close']} Detectadas {len(nulos_amount)} transacciones sin monto")
         st.dataframe(nulos_amount, use_container_width=True)
     
-    # Check for extreme amounts (> 1,000,000 CLP)
-    if "amount_universal_clp" in df.columns:
-        high_amounts = df[df['amount_universal_clp'].abs() > 1_000_000]
-        if not high_amounts.empty:
-            st.warning(f"{ICONS['warning']} Detectadas {len(high_amounts)} transacciones con monto > $1,000,000 CLP")
-            st.dataframe(high_amounts.sort_values("amount_universal_clp", ascending=False), use_container_width=True)
+    # Check for extreme amounts
+    if all(col in df.columns for col in ["amount", "currency", "type", "category", "wallet"]):
+        # 2a. Wallet: Main CLP 🇨🇱 (> 500,000 CLP)
+        mask_clp = (
+            (df['wallet'] == 'Main CLP 🇨🇱') &
+            (df['currency'] == 'CLP') & 
+            (df['amount'].abs() > 500_000) & 
+            (df['type'] != 'Income') &
+            ~((df['type'] == 'Expense') & (df['category'] == 'Rental Apartment'))
+        )
+        high_clp = df[mask_clp]
+        
+        if not high_clp.empty:
+            st.warning(f"{ICONS['warning']} Detectadas {len(high_clp)} transacciones en 'Main CLP 🇨🇱' > $500,000 (Excluyendo Income/Arriendo)")
+            st.dataframe(high_clp.sort_values("amount", ascending=False), use_container_width=True)
         else:
-            st.success(f"{ICONS['check']} Ninguna transacción individual supera los $500,000 CLP")
+            st.success(f"{ICONS['check']} Ninguna transacción en 'Main CLP 🇨🇱' supera los $500,000 (fuera de Arriendo/Income)")
+
+        # 2b. Wallet: UNFCU (> 500 USD)
+        mask_unfcu = (
+            (df['wallet'] == 'UNFCU') &
+            (df['currency'] == 'USD') &
+            (df['amount'].abs() > 500) &
+            (df['type'] != 'Income')
+        )
+        high_unfcu = df[mask_unfcu]
+
+        if not high_unfcu.empty:
+            st.warning(f"{ICONS['warning']} Detectadas {len(high_unfcu)} transacciones en 'UNFCU' > $500 USD")
+            st.dataframe(high_unfcu.sort_values("amount", ascending=False), use_container_width=True)
+        else:
+            st.success(f"{ICONS['check']} Ninguna transacción en 'UNFCU' supera los $500 USD")
     
     # 3. Category & Type
     st.markdown("### 3. `category` & `type` ")

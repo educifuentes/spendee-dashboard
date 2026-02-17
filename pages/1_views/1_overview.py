@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from models.marts.bi_transactions import bi_transactions
+
 from utilities.data_transformations.filtering import filter_by_date_range
 from utilities.data_transformations.aggregations import (
     get_current_month_expenses,
