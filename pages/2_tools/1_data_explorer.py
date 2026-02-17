@@ -48,12 +48,12 @@ editor_df = filtered_df[valid_cols].copy()
 column_config = {
     "id": None, # Hide ID column
     "date": st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY", disabled=False),
-    "category": st.column_config.TextColumn("Category", disabled=True),
-    "labels": st.column_config.TextColumn("Labels", disabled=True), # Or ListColumn if it comes as list
+    "category": st.column_config.TextColumn("Category", disabled=False),
+    "labels": st.column_config.TextColumn("Labels", disabled=False), # Or ListColumn if it comes as list
     "note": st.column_config.TextColumn("Note", disabled=False),
-    "type": st.column_config.TextColumn("Type", disabled=True),
+    "type": st.column_config.TextColumn("Type", disabled=False),
     "amount": st.column_config.NumberColumn("Amount", format="%.2f", disabled=False),
-    "currency": st.column_config.TextColumn("Currency", disabled=True),
+    "currency": st.column_config.TextColumn("Currency", disabled=False),
     "amount_universal_clp": st.column_config.NumberColumn("Amount (CLP)", disabled=True),
     "budget": st.column_config.TextColumn("Budget", disabled=True),
 }
