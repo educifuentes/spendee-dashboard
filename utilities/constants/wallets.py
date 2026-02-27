@@ -1,0 +1,1 @@
+WALLETS = [ "unfcu", "main-clp", "pasivos"]
