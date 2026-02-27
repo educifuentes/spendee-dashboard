@@ -18,21 +18,23 @@ echo "--- Step 1: Uploading Secrets & Granting Access ---"
 
 # 2. Ensure Artifact Registry Repository exists
 echo "--- Step 2: Ensuring Artifact Registry Repository exists ---"
-gcloud artifacts repositories describe $REPO_NAME --location=$REGION >/dev/null 2>&1 || \
+gcloud artifacts repositories describe $REPO_NAME --location=$REGION --project=$PROJECT_ID >/dev/null 2>&1 || \
 gcloud artifacts repositories create $REPO_NAME \
     --repository-format=docker \
     --location=$REGION \
-    --description="Repository for Cloud Run images"
+    --description="Repository for Cloud Run images" \
+    --project=$PROJECT_ID
 
 # 3. Build the Image using Cloud Build
 echo "--- Step 3: Building Image with Cloud Build ---"
-gcloud builds submit --tag $IMAGE_NAME .
+gcloud builds submit --project=$PROJECT_ID --tag $IMAGE_NAME .
 
 # 4. Deploy to Cloud Run
 echo "--- Step 4: Deploying to Cloud Run ---"
 gcloud run deploy $SERVICE_NAME \
     --image $IMAGE_NAME \
     --region $REGION \
+    --project $PROJECT_ID \
     --allow-unauthenticated \
     --set-secrets="/app/.streamlit/secrets.toml=${SECRET_NAME}:latest" \
     --port 8080
