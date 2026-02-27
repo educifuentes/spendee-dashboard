@@ -29,6 +29,7 @@ fct_transactions_df = bi_transactions()
 
 # 2. Header & Metrics
 st.title(":material/paid: Spendee Expense Dashboard")
+st.markdown("### test deploy")
 st.info(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
 
 m1, m2, m3, m4 = st.columns(4)
