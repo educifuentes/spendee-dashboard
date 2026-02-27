@@ -32,17 +32,17 @@ def get_db_connection():
     db_pass = db_config["DB_PASS"]
     db_name = db_config["DB_NAME"]
 
+    connector = Connector()
     # Define the connector creation function
     def getconn():
-        with Connector() as connector:
-            conn = connector.connect(
-                instance_connection_name,
-                "pg8000",
-                user=db_user,
-                password=db_pass,
-                db=db_name,
-            )
-            return conn
+        conn = connector.connect(
+            instance_connection_name,
+            "pg8000",
+            user=db_user,
+            password=db_pass,
+            db=db_name,
+        )
+        return conn
 
     # Create the SQLAlchemy engine
     pool = sqlalchemy.create_engine(
@@ -101,10 +101,43 @@ def insert_new_transactions(df, engine=None):
         raise e
 
 if __name__ == "__main__":
-    # Example usage / testing
     try:
+        # Load secrets to get CSV path
+        secrets_path = ".streamlit/secrets.toml"
+        if not os.path.exists(secrets_path):
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)
+            secrets_path = os.path.join(project_root, ".streamlit", "secrets.toml")
+            
+        with open(secrets_path, "rb") as f:
+            secrets = tomli.load(f)
+            
+        csv_file = secrets["gcp_cloud_sql"].get("CSV_FILE", "seeds/uploads/fct_transactions.csv")
+        
+        # Adjust path if running from scripts directory
+        if not os.path.exists(csv_file):
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)
+            csv_file = os.path.join(project_root, csv_file)
+
+        print(f"Reading data from {csv_file}...")
+        df = pd.read_csv(csv_file)
+        
         engine = get_db_connection()
-        hashes = get_existing_hashes(engine)
-        print(f"Found {len(hashes)} existing transaction hashes.")
+        existing_hashes = get_existing_hashes(engine)
+        print(f"Found {len(existing_hashes)} existing transaction hashes.")
+        
+        if "record_hash" not in df.columns:
+            print("Error: 'record_hash' column not found in the CSV.")
+            exit(1)
+            
+        new_df = df[~df["record_hash"].isin(existing_hashes)]
+        
+        if new_df.empty:
+            print("No new transactions to insert.")
+        else:
+            print(f"Found {len(new_df)} new transactions to insert.")
+            insert_new_transactions(new_df, engine)
+            
     except Exception as e:
         print(f"An error occurred: {e}")
