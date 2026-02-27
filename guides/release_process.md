@@ -17,7 +17,10 @@ Whenever a new git tag is pushed to the repository in this format (prefixed with
 2. **Generate the CalVer Tag**
    Determine today's date in `YY.MM.DD` format.
    - _Example: For February 20th, 2026, the version is `26.02.20`_
+   - _If releasing multiple times a day, append a `.1`, `.2` suffix (e.g. `26.02.20.1`)_
    - _The tag must start with a lowercase `v`_
+
+   _Tip: You can just run `./scripts/release.sh` and it will automatically calculate and push the correct tag for you, including daily increment suffixes._
 
 3. **Tag the commit**
 

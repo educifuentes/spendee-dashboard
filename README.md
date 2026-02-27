@@ -41,6 +41,9 @@ To deploy the application to Google Cloud Run, ensure you have the `gcloud` CLI 
 ```bash
 chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
+
+
+./scripts/release.sh
 ```
 
 This script will:
