@@ -134,6 +134,8 @@ if __name__ == "__main__":
         # Pattern 2: Without date (transactions_export_walletname.csv)
         pattern_no_date = re.compile(r"transactions_export_(.+)\.csv")
         
+        import datetime
+        
         for search_dir in directories_to_scan:
             if not os.path.exists(search_dir):
                 continue
@@ -149,9 +151,10 @@ if __name__ == "__main__":
                     date_str = match_date.group(1)
                     wallet_name = match_date.group(2)
                 elif match_no_date:
-                    # Fake a high date so the un-dated latest export is always chosen
-                    # over any dated backups if they happen to both exist.
-                    date_str = "9999-99-99"
+                    # Get the actual file modification date in YYYY-MM-DD format
+                    file_path = os.path.join(search_dir, f)
+                    mtime = os.path.getmtime(file_path)
+                    date_str = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d')
                     wallet_name = match_no_date.group(1)
                     
                 # Check if this profile is one of the target wallets
