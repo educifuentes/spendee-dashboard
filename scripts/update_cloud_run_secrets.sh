@@ -1,12 +1,21 @@
 #!/bin/bash
 set -e
 
-# Configuration
-SERVICE_NAME="spendee-dashboard"
-REGION="southamerica-west1"
-SECRET_NAME="spendee-dashboard-secrets"
-PROJECT_ID="personal-dashboards-487913"
-SECRETS_FILE=".streamlit/secrets.toml"
+# Load configuration from central config file
+SCRIPT_DIR=$(dirname "$0")
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd)
+CONFIG_FILE="$PROJECT_ROOT/config/deploy.toml"
+
+get_config_value() {
+    local key=$1
+    grep -E "^${key}[[:space:]]*=" "$CONFIG_FILE" | sed -E 's/.*=[[:space:]]*"(.*)".*/\1/'
+}
+
+SERVICE_NAME=$(get_config_value "service_name")
+REGION=$(get_config_value "region")
+SECRET_NAME=$(get_config_value "secret_name")
+PROJECT_ID=$(get_config_value "project_id")
+SECRETS_FILE=$(get_config_value "secrets_file")
 
 # Colors (simpler ANSI codes compatible with most terminals)
 GREEN='\033[0;32m'

@@ -1,0 +1,11 @@
+[gcp]
+project_id = "personal-dashboards-487913"
+region = "southamerica-west1"
+
+[cloud_run]
+service_name = "spendee-dashboard"
+secret_name = "spendee-dashboard-secrets"
+repo_name = "cloud-run-source-deploy"
+
+[streamlit]
+secrets_file = ".streamlit/secrets.toml"

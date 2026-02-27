@@ -1,11 +1,20 @@
 #!/bin/bash
 
-# Configuration
-SERVICE_NAME="spendee-dashboard"
-REGION="southamerica-west1"
-SECRET_NAME="spendee-dashboard-secrets"
-REPO_NAME="cloud-run-source-deploy" # Standard repo name
-PROJECT_ID="personal-dashboards-487913"
+# Load configuration from central config file
+SCRIPT_DIR=$(dirname "$0")
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd)
+CONFIG_FILE="$PROJECT_ROOT/config/deploy.toml"
+
+get_config_value() {
+    local key=$1
+    grep -E "^${key}[[:space:]]*=" "$CONFIG_FILE" | sed -E 's/.*=[[:space:]]*"(.*)".*/\1/'
+}
+
+SERVICE_NAME=$(get_config_value "service_name")
+REGION=$(get_config_value "region")
+SECRET_NAME=$(get_config_value "secret_name")
+REPO_NAME=$(get_config_value "repo_name")
+PROJECT_ID=$(get_config_value "project_id")
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
 IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}:latest"
 SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
