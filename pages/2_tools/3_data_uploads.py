@@ -9,92 +9,88 @@ from utilities.ui_components.icons import ICONS
 
 # Ensure scripts folder is importable
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-# current_dir=.../pages/2_tools -> dirname -> pages -> dirname -> spendee-dashboard
-# Wait, my logic was:
-# current_dir (2_tools) -> dirname (pages) -> dirname (spendee-dashboard)
-# So only TWO dirname calls needed on current_dir.
-# The previous code had THREE. Let's fix it to use TWO.
 project_root = os.path.dirname(os.path.dirname(current_dir))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from utilities.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash, load_budgets
-from scripts.add_new_transactions import get_existing_hashes, insert_new_transactions
-
-def clean_raw_spendee_csv(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean a Spendee DataFrame (same logic as clean_transactions but for in-memory DataFrame).
-    
-    Args:
-        df: Raw DataFrame from Spendee CSV
-        
-    Returns:
-        Cleaned DataFrame with record_hash
-    """
-    df = df.copy()
-    
-    # Rename columns: 'Category name' -> 'category' and lowercase all
-    df.columns = df.columns.str.lower()
-    df = df.rename(columns={"category name": "category"})
-    
-    # Convert amount to absolute values
-    df["amount"] = df["amount"].abs()
-    
-    # Convert date to datetime
-    df["date"] = pd.to_datetime(df["date"])
-    
-    # Load budget mappings
-    budgets = load_budgets()
-    
-    # Add budget column by mapping from category
-    df["budget"] = df["category"].map(budgets).fillna("Otros")
-    
-    # Filter to only expenses
-    df = df[df["type"].str.lower() == "expense"].copy()
-    
-    # Drop author column
-    if "author" in df.columns:
-        df = df.drop(columns=["author"])
-    
-    # Add record hash for duplicate detection
-    df = add_record_hash(df)
-    
-    return df
-
-@st.cache_data(ttl=300)
-def get_cached_existing_hashes() -> set:
-    """Wrapper to cache existing hashes from Cloud SQL."""
-    return get_existing_hashes()
-
+from utilities.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash
+from scripts.database_add_new_transactions import get_db_connection, get_latest_transaction_date, insert_new_transactions
 
 st.title(f"{ICONS['upload']} Upload Data to Cloud SQL")
 st.write("Go to Spendee App and then Settings -> Advanced -> Export")
+st.write("You can upload multiple CSV files at once.")
 
-uploaded_file = st.file_uploader("Choose CSV file", type="csv", key="csv_uploader")
+uploaded_files = st.file_uploader("Choose CSV files", type="csv", accept_multiple_files=True, key="csv_uploader")
 
-if uploaded_file is not None:
+if uploaded_files:
     try:
-        # Read CSV - reset file pointer if needed
-        uploaded_file.seek(0)
-        df_raw = pd.read_csv(uploaded_file)
+        # Raw Spendee Export Column Mapping
+        rename_map = {
+            "Date": "date",
+            "Wallet": "wallet",
+            "Type": "type",
+            "Category name": "category",
+            "Amount": "amount",
+            "Currency": "currency",
+            "Note": "note",
+            "Labels": "labels",
+            "Author": "author"
+        }
         
-        # Clean the dataframe
-        with st.spinner("Cleaning data..."):
-            df_cleaned = clean_raw_spendee_csv(df_raw)
+        df_list = []
         
-        st.metric("Cleaned rows", len(df_cleaned))
+        with st.spinner("Processing files..."):
+            for uploaded_file in uploaded_files:
+                uploaded_file.seek(0)
+                wallet_df = pd.read_csv(uploaded_file)
+                
+                # Standardize columns to database schema
+                wallet_df = wallet_df.rename(columns=rename_map)
+                
+                # Only keep columns we care about if extra ones exist
+                keep_cols = [c for c in rename_map.values() if c in wallet_df.columns]
+                wallet_df = wallet_df[keep_cols]
+                
+                df_list.append(wallet_df)
+                
+        if not df_list:
+            st.error("No data found in the uploaded files.")
+            st.stop()
+            
+        # Combine all dataframes into one
+        df = pd.concat(df_list, ignore_index=True)
+        st.metric("Total rows found", len(df))
         
-        # Get existing hashes
-        with st.spinner("Checking for duplicates (querying Cloud SQL)..."):
-            existing_hashes = get_cached_existing_hashes()
+        # Generate the required record_hash for the database
+        df = add_record_hash(df)
         
-        # Filter to only new records
-        new_transactions = df_cleaned[~df_cleaned["record_hash"].isin(existing_hashes)].copy()
-        
+        # Get DB engine and latest date
+        with st.spinner("Querying Cloud SQL for latest transactions..."):
+            engine = get_db_connection()
+            
+            if "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"], errors='coerce')
+                
+            latest_date = get_latest_transaction_date(engine)
+            
+            if latest_date is not None:
+                st.write(f"Latest transaction in database is from: **{latest_date}**")
+                # Align timezones if necessary for comparison
+                csv_tz = getattr(df["date"].dt, 'tz', None)
+                
+                if latest_date.tzinfo is not None and csv_tz is None:
+                    df["date"] = df["date"].dt.tz_localize(latest_date.tzinfo)
+                elif latest_date.tzinfo is None and csv_tz is not None:
+                    df["date"] = df["date"].dt.tz_localize(None)
+                    
+                new_transactions = df[df["date"] > latest_date].copy()
+            else:
+                st.write("No existing transactions found or could not fetch latest date. Inserting all rows.")
+                new_transactions = df.copy()
+                
         st.metric("New records to upload", len(new_transactions))
         
-        if len(new_transactions) == 0:
+        if new_transactions.empty:
             st.info("No new records to upload. All records already exist in the database.")
             if st.button("Start over"):
                 st.rerun()
@@ -107,25 +103,22 @@ if uploaded_file is not None:
             if st.button("Upload to Database", type="primary"):
                 with st.spinner("Uploading to Cloud SQL..."):
                     try:
-                        rows_inserted = insert_new_transactions(new_transactions)
+                        rows_inserted = insert_new_transactions(new_transactions, engine)
                         
                         st.success(f"✅ Successfully uploaded {rows_inserted} new records!")
                         
-                        # Clear cache and rerun
+                        # Clear cache if any
                         st.cache_data.clear()
-                        # Optional: rerun to reset state
-                        # st.rerun()
                         
                     except Exception as e:
                         st.error(f"Error uploading to database: {str(e)}")
             
             if st.button("Cancel"):
                 st.rerun()
-    
+                
     except Exception as e:
-        st.error(f"Error processing file: {str(e)}")
+        st.error(f"Error processing files: {str(e)}")
         if st.button("Try again"):
             st.rerun()
-
 
 
