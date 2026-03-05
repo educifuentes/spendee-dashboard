@@ -95,9 +95,22 @@ if st.session_state.get("transaction_editor"):
         for idx, new_values in edited_rows.items():
             try:
                 row_id = editor_df.iloc[idx]["id"]
+                row_type = editor_df.iloc[idx]["type"]
+                current_amount = editor_df.iloc[idx]["amount"]
                 
                 # Filter out derived columns that shouldn't be updated
                 valid_updates = {k: v for k, v in new_values.items() if k not in ["amount_universal_clp", "budget"]}
+                
+                # Ensure the amount stored in DB correctly reflects the expense/income sign
+                if "amount" in valid_updates or "type" in valid_updates:
+                    new_type = valid_updates.get("type", row_type)
+                    # Get the absolute amount (either the new edited amount, or the current one)
+                    unsigned_amount = abs(float(valid_updates.get("amount", current_amount)))
+                    
+                    if new_type == "Expense":
+                        valid_updates["amount"] = -unsigned_amount
+                    else: # Income, etc.
+                        valid_updates["amount"] = unsigned_amount
                 
                 if valid_updates:
                     update_transaction(row_id, valid_updates)
