@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 
 from utilities.ui_components.icons import ICONS
+from utilities.ui_components.editable_dataframe import editable_transactions_dataframe
 
 
 def validate_transactions(df):
@@ -31,7 +32,7 @@ def validate_transactions(df):
     nulos_date = df[df['date'].isna()]
     if not nulos_date.empty:
         st.error(f"{ICONS['close']} Detectadas {len(nulos_date)} transacciones sin fecha")
-        st.dataframe(nulos_date, use_container_width=True)
+        editable_transactions_dataframe(nulos_date, key="val_nulos_date")
     else:
         st.success(f"{ICONS['check']} Todas las transacciones tienen fecha")
 
@@ -47,7 +48,7 @@ def validate_transactions(df):
 
     if not pre_2016.empty:
         st.warning(f"{ICONS['warning']} Detectadas {len(pre_2016)} transacciones anteriores a 2016")
-        st.dataframe(pre_2016.sort_values("date"), use_container_width=True)
+        editable_transactions_dataframe(pre_2016.sort_values("date"), key="val_pre_2016")
     else:
         st.success(f"{ICONS['check']} No hay transacciones anteriores a 2016")
 
@@ -58,7 +59,7 @@ def validate_transactions(df):
     nulos_amount = df[df['amount'].isna()]
     if not nulos_amount.empty:
         st.error(f"{ICONS['close']} Detectadas {len(nulos_amount)} transacciones sin monto")
-        st.dataframe(nulos_amount, use_container_width=True)
+        editable_transactions_dataframe(nulos_amount, key="val_nulos_amount")
     
     # Check for extreme amounts
     if all(col in df.columns for col in ["amount", "currency", "type", "category", "wallet"]):
@@ -74,7 +75,7 @@ def validate_transactions(df):
         
         if not high_clp.empty:
             st.warning(f"{ICONS['warning']} Detectadas {len(high_clp)} transacciones en 'Main CLP 🇨🇱' > $500,000 (Excluyendo Income/Arriendo)")
-            st.dataframe(high_clp.sort_values("amount", ascending=False), use_container_width=True)
+            editable_transactions_dataframe(high_clp.sort_values("amount", ascending=False), key="val_high_clp")
         else:
             st.success(f"{ICONS['check']} Ninguna transacción en 'Main CLP 🇨🇱' supera los $500,000 (fuera de Arriendo/Income)")
 
@@ -89,7 +90,7 @@ def validate_transactions(df):
 
         if not high_unfcu.empty:
             st.warning(f"{ICONS['warning']} Detectadas {len(high_unfcu)} transacciones en 'UNFCU' > $500 USD")
-            st.dataframe(high_unfcu.sort_values("amount", ascending=False), use_container_width=True)
+            editable_transactions_dataframe(high_unfcu.sort_values("amount", ascending=False), key="val_high_unfcu")
         else:
             st.success(f"{ICONS['check']} Ninguna transacción en 'UNFCU' supera los $500 USD")
     
@@ -100,7 +101,7 @@ def validate_transactions(df):
     nulos_cat = df[df['category'].isna() | (df['category'] == "")]
     if not nulos_cat.empty:
         st.error(f"{ICONS['close']} Detectadas {len(nulos_cat)} transacciones sin categoría")
-        st.dataframe(nulos_cat, use_container_width=True)
+        editable_transactions_dataframe(nulos_cat, key="val_nulos_cat")
     else:
         st.success(f"{ICONS['check']} Todas las transacciones tienen categoría")
 
@@ -108,7 +109,7 @@ def validate_transactions(df):
     invalid_types = df[~df['type'].isin(['Expense', 'Income', 'Transfer'])]
     if not invalid_types.empty:
         st.error(f"{ICONS['close']} Detectados {len(invalid_types)} registros con tipo inválido (No es Expense o Income)")
-        st.dataframe(invalid_types, use_container_width=True)
+        editable_transactions_dataframe(invalid_types, key="val_invalid_types")
     else:
         st.success(f"{ICONS['check']} Todos los tipos de transacción son válidos")
 
@@ -127,7 +128,7 @@ def validate_transactions(df):
     dupes = df[df.duplicated(subset=cols_for_dupes, keep=False)]
     if not dupes.empty:
         st.warning(f"{ICONS['warning']} Detectados {len(dupes)} registros que podrían ser duplicados (Misma fecha, monto, categoría y nota)")
-        st.dataframe(dupes.sort_values("date"), use_container_width=True)
+        editable_transactions_dataframe(dupes.sort_values("date"), key="val_dupes")
     else:
         st.success(f"{ICONS['check']} No se detectaron duplicados exactos")
     

@@ -61,7 +61,8 @@ def editable_transactions_dataframe(df: pd.DataFrame, key: str):
             deleted_indices = changes["deleted_rows"]
             for idx in deleted_indices:
                 try:
-                    row_id = editor_df.iloc[idx]["id"]
+                    raw_id = editor_df.iloc[idx]["id"]
+                    row_id = int(raw_id) if pd.notnull(raw_id) else None
                     delete_transaction(row_id)
                     st.toast(f"Deleted transaction {row_id}")
                 except Exception as e:
@@ -74,9 +75,13 @@ def editable_transactions_dataframe(df: pd.DataFrame, key: str):
         # 2. Handle Edits
         if changes.get("edited_rows"):
             edited_rows = changes["edited_rows"]
+            has_error = False
             for idx, new_values in edited_rows.items():
                 try:
-                    row_id = editor_df.iloc[idx]["id"]
+                    # Coerce IDs to Python native types, dropping np.int64 or np.float64
+                    raw_id = editor_df.iloc[idx]["id"]
+                    row_id = int(raw_id) if pd.notnull(raw_id) else None
+                    
                     row_type = editor_df.iloc[idx].get("type", None)
                     current_amount = editor_df.iloc[idx].get("amount", 0)
                     
@@ -90,17 +95,21 @@ def editable_transactions_dataframe(df: pd.DataFrame, key: str):
                         unsigned_amount = abs(float(valid_updates.get("amount", current_amount)))
                         
                         if new_type == "Expense":
-                            valid_updates["amount"] = -unsigned_amount
+                            valid_updates["amount"] = float(-unsigned_amount)
                         elif new_type: # Income, Transfer, etc.
-                            valid_updates["amount"] = unsigned_amount
+                            valid_updates["amount"] = float(unsigned_amount)
                     
                     if valid_updates:
                         update_transaction(row_id, valid_updates)
                         st.toast(f"Updated transaction {row_id}")
                 
                 except Exception as e:
+                    has_error = True
                     st.error(f"Error updating row {idx}: {e}")
 
+            if has_error:
+                st.stop()
+            
             # Clear cache to reflect changes
             load_transactions.clear()
             st.rerun()
