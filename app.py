@@ -1,5 +1,6 @@
 import streamlit as st
 
+from utilities.get_version import get_git_version
 
 # ==========================================
 # Page Configuration
@@ -36,5 +37,8 @@ pg = st.navigation({
     "Tools": [explore_page, validations_page, search_page, uploads_page],
     "Dev": [staging_page, marts_page, bi_tables_page, config_page]
 })
+
+with st.sidebar:
+    st.caption(f"Version: {get_git_version()}")
 
 pg.run()
