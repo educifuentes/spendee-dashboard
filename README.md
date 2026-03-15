@@ -39,8 +39,6 @@ streamlit run app.py
 To deploy the application to Google Cloud Run, ensure you have the `gcloud` CLI installed and authenticated, then run the deployment script:
 
 ```bash
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh
 
 
 ./scripts/release.sh
