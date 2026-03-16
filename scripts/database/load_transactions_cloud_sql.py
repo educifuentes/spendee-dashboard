@@ -17,7 +17,7 @@ INSTANCE_CONNECTION_NAME = db_config["INSTANCE_CONNECTION_NAME"]
 DB_USER = db_config["DB_USER"]
 DB_PASS = db_config["DB_PASS"]
 DB_NAME = db_config["DB_NAME"]
-TABLE_NAME = db_config["TABLE_NAME"]
+TABLE_NAME = "stg_transaction"
 CSV_FILE = db_config["CSV_FILE"]
 
 def getconn():
@@ -50,8 +50,7 @@ def check_and_create_table(engine):
             note TEXT,
             labels TEXT,
             author TEXT,
-            record_hash TEXT,
-            id BIGINT PRIMARY KEY
+            record_hash TEXT
         );
     """)
     with engine.connect() as conn:

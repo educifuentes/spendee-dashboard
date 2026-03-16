@@ -6,6 +6,9 @@ import sqlalchemy
 from sqlalchemy import text
 import tomli
 
+from utilities.constants.wallets import WALLETS
+from utilities.data_transformations.spendee_clean import add_spendee_record_hash
+
 def get_db_connection():
     """
     Establishes a connection to the Cloud SQL instance using configuration from secrets.toml.
@@ -60,7 +63,7 @@ def get_latest_transaction_date(engine=None):
         engine = get_db_connection()
         
     try:
-        query = "SELECT MAX(date) as max_date FROM transactions"
+        query = "SELECT MAX(date) as max_date FROM stg_transaction"
         df = pd.read_sql(query, engine)
         max_date = df["max_date"].iloc[0]
         if pd.notnull(max_date):
@@ -84,7 +87,7 @@ def insert_new_transactions(df, engine=None):
     if engine is None:
         engine = get_db_connection()
     
-    table_name = "transactions"
+    table_name = "stg_transaction"
     
     try:
         # Check if table exists, create if not (using the logic from load_transactions if needed)
@@ -113,8 +116,7 @@ if __name__ == "__main__":
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
             
-        from utilities.constants.wallets import WALLETS
-        from utilities.data_transformations.spendee_clean import add_spendee_record_hash
+       
         
         # Define the path to the seeds directory
         # The user's exports are either here or in seeds/new_transaction uploads

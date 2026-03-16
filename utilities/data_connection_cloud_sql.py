@@ -36,6 +36,19 @@ def load_transactions():
     
     return df
 
+@st.cache_data(ttl=600)
+def load_stg_transactions():
+    """
+    Loads all transactions from the Cloud SQL 'stg_transaction' staging table into a pandas DataFrame.
+    This table contains the raw data loaded via scripts before any transformations.
+    """
+    pool = get_engine()
+    
+    with pool.connect() as db_conn:
+        df = pd.read_sql("SELECT * FROM stg_transaction", db_conn)
+    
+    return df
+
 def update_transaction(transaction_id, changes):
     """
     Update a transaction in Cloud SQL.
