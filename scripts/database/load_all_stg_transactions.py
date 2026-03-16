@@ -18,7 +18,7 @@ DB_USER = db_config["DB_USER"]
 DB_PASS = db_config["DB_PASS"]
 DB_NAME = db_config["DB_NAME"]
 TABLE_NAME = "stg_transaction"
-CSV_FILE = db_config["CSV_FILE"]
+CSV_DIR = "seeds/spendee_csv_exports/transactions_export_2026-03-16"
 
 def getconn():
     """Establishes a connection to the Cloud SQL instance."""
@@ -38,25 +38,29 @@ def check_and_create_table(engine):
     Schema is based on the known CSV structure.
     """
     print(f"Checking if table '{TABLE_NAME}' exists...")
-    # Schema definition
+    # Schema definition based on CSV: Date,Wallet,Type,"Category name",Amount,Currency,Note,Labels,Author
+    
+    # Drop table first to recreate with new schema if needed
+    drop_stmt = text(f"DROP TABLE IF EXISTS {TABLE_NAME};")
+    
     create_stmt = text(f"""
-        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-            date TIMESTAMPTZ,
-            wallet TEXT,
-            type TEXT,
-            category TEXT,
-            amount NUMERIC,
-            currency TEXT,
-            note TEXT,
-            labels TEXT,
-            author TEXT,
-            record_hash TEXT
+        CREATE TABLE {TABLE_NAME} (
+            "Date" TIMESTAMPTZ,
+            "Wallet" TEXT,
+            "Type" TEXT,
+            "Category name" TEXT,
+            "Amount" NUMERIC,
+            "Currency" TEXT,
+            "Note" TEXT,
+            "Labels" TEXT,
+            "Author" TEXT
         );
     """)
     with engine.connect() as conn:
+        conn.execute(drop_stmt)
         conn.execute(create_stmt)
         conn.commit()
-    print(f"Table '{TABLE_NAME}' check complete.")
+    print(f"Table '{TABLE_NAME}' check complete. Recreated with new schema if it existed.")
 
 def clear_table(engine):
     """
@@ -69,15 +73,15 @@ def clear_table(engine):
         conn.commit()
     print(f"All rows deleted from '{TABLE_NAME}'.")
 
-def reload_all_transactions_to_database(engine, csv_path):
+def reload_all_transactions_to_database(engine, csv_dir):
     """
     Orchestrates the reloading of all transaction data:
     1. Ensures the table exists.
     2. Clears the table.
-    3. Loads fresh data from the CSV.
+    3. Loads fresh data from all CSVs in the directory.
     """
-    if not os.path.exists(csv_path):
-        print(f"Error: File '{csv_path}' not found.")
+    if not os.path.exists(csv_dir):
+        print(f"Error: Directory '{csv_dir}' not found.")
         return
 
     # 1. Ensure table structure is present
@@ -86,34 +90,41 @@ def reload_all_transactions_to_database(engine, csv_path):
     # 2. Clear existing data
     clear_table(engine)
     
-    # 3. Read and Prepare Data
-    print(f"Reading data from '{csv_path}'...")
-    try:
-        df = pd.read_csv(csv_path)
-    except Exception as e:
-        print(f"Error reading CSV file: {e}")
+    # 3. Process all CSV files in directory
+    csv_files = [f for f in os.listdir(csv_dir) if f.endswith('.csv')]
+    if not csv_files:
+        print(f"No CSV files found in '{csv_dir}'.")
         return
         
-    if df.empty:
-        print("CSV file is empty. Nothing to load.")
-        return
-    
-    # Ensure date column is parsed as datetime (Postgres expects appropriate format)
-    if 'date' in df.columns:
-        df['date'] = pd.to_datetime(df['date'])
-    
-    print(f"Prepared {len(df)} rows for insertion.")
-    
-    # 4. Insert Data
-    print(f"Inserting data into '{TABLE_NAME}'...")
-    try:
-        # Use 'append' because the table exists (we just cleared it)
-        df.to_sql(TABLE_NAME, engine, if_exists='append', index=False, chunksize=1000)
-        print("Data reloaded successfully.")
-    except Exception as e:
-        print(f"Error inserting data: {e}")
-        # Re-raise or handle as appropriate
-        raise e
+    for file in csv_files:
+        csv_path = os.path.join(csv_dir, file)
+        print(f"Reading data from '{csv_path}'...")
+        try:
+            df = pd.read_csv(csv_path)
+        except Exception as e:
+            print(f"Error reading CSV file {file}: {e}")
+            continue
+            
+        if df.empty:
+            print(f"CSV file {file} is empty. Skipping.")
+            continue
+        
+        # Ensure Date column is parsed as datetime (Postgres expects appropriate format)
+        if 'Date' in df.columns:
+            df['Date'] = pd.to_datetime(df['Date'])
+        
+        print(f"Prepared {len(df)} rows from {file} for insertion.")
+        
+        # 4. Insert Data
+        print(f"Inserting data from {file} into '{TABLE_NAME}'...")
+        try:
+            # Use 'append' because the table exists (we just cleared it)
+            df.to_sql(TABLE_NAME, engine, if_exists='append', index=False, chunksize=1000)
+            print(f"Data from {file} loaded successfully.")
+        except Exception as e:
+            print(f"Error inserting data from {file}: {e}")
+            # Re-raise or handle as appropriate
+            raise e
 
 def main():
     """Main execution entry point."""
@@ -125,7 +136,7 @@ def main():
     )
 
     try:
-        reload_all_transactions_to_database(pool, CSV_FILE)
+        reload_all_transactions_to_database(pool, CSV_DIR)
     except Exception as e:
         print(f"An error occurred during execution: {e}")
     finally:
