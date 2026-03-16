@@ -5,7 +5,7 @@ import streamlit as st
 import pandas as pd
 
 from datetime import date, timedelta
-from models.marts.bi_transactions import bi_transactions
+from models.spendee.marts.bi_transactions import bi_transactions
 from utilities.data_connection_cloud_sql import (
     update_transaction, 
     delete_transaction,

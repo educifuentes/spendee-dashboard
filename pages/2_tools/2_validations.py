@@ -1,6 +1,6 @@
 import streamlit as st
 
-from models.marts.bi_transactions import bi_transactions
+from models.spendee.marts.bi_transactions import bi_transactions
 
 import tests.validate_transactions as validate_transactions
 

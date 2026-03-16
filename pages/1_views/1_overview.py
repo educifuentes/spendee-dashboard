@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from models.marts.bi_transactions import bi_transactions
+from models.spendee.marts.bi_transactions import bi_transactions
 
 from utilities.data_transformations.filtering import filter_by_date_range
 from utilities.data_transformations.aggregations import (
@@ -16,7 +16,7 @@ from utilities.data_transformations.periods import (
     get_available_periods,
     get_period_dates
 )
-from models.marts.metrics.expense_metrics import get_mtd_expense_comparison
+from models.spendee.marts.metrics.expense_metrics import get_mtd_expense_comparison
 from utilities.charts import (
     bar_chart_by_category,
     bar_chart_by_budget,

@@ -1,0 +1,6 @@
+sources:
+  - name: gsheets
+    tables:
+      - name: income_forecast
+        url: https://docs.google.com/spreadsheets/d/15wX64T7243u2j6199O477i9tV-192837465/edit?usp=sharing
+        description: income forecast

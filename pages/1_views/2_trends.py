@@ -2,7 +2,7 @@ import streamlit as st
 
 import pandas as pd
 
-from models.marts.bi_transactions import bi_transactions
+from models.spendee.marts.bi_transactions import bi_transactions
 
 from utilities.charts import (
    render_transactions_tabbed_chart

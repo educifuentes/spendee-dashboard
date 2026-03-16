@@ -1,6 +1,6 @@
 import streamlit as st
 
-from models.marts._fct_transactions import fct_transactions
+from models.spendee.marts._fct_transactions import fct_transactions
 
 from utilities.ui_components.render_model import render_model_ui
 

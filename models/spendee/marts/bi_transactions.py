@@ -1,6 +1,6 @@
 import pandas as pd
 
-from models.staging._stg_spendee__transactions import stg_spendee__transactions
+from models.spendee.staging._stg_spendee__transactions import stg_spendee__transactions
 
 from utilities.constants.budgets import BUDGETS
 from utilities.data_transformations.periods import create_period_columns

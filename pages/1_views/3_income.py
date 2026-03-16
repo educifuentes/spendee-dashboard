@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 
-from models.marts.bi_transactions import bi_transactions
+from models.spendee.marts.bi_transactions import bi_transactions
 
 from utilities.misc import st_dataframe_helper
 
-from models.marts.pivot_tables._pivot_income_month import render_income_pivot_table
+from models.spendee.marts.pivot_tables._pivot_income_month import render_income_pivot_table
 
 df = bi_transactions()
 

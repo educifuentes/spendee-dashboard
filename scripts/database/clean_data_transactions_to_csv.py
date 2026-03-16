@@ -8,7 +8,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from models.marts._fct_transactions import fct_transactions
+from models.spendee.marts._fct_transactions import fct_transactions
 
 def export_transactions_to_csv(output_path=None):
     """

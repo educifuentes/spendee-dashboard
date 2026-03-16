@@ -1,6 +1,6 @@
 import streamlit as st
 
-from models.staging._stg_spendee__transactions import stg_spendee__transactions
+from models.spendee.staging._stg_spendee__transactions import stg_spendee__transactions
 
 from utilities.ui_components.render_model import render_model_ui
 
