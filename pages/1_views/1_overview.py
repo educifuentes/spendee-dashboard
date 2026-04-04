@@ -4,14 +4,14 @@ import pandas as pd
 from models.spendee.marts.bi_transactions import bi_transactions
 from models.spendee.marts.metrics.expense_metrics import get_mtd_expense_comparison
 
-from utilities.charts import (
+from helpers.charts import (
     bar_chart_by_category,
     bar_chart_by_budget,
     render_transactions_tabbed_chart
 )
-from utilities.misc import setup_period_selection, get_wallet_options
-from utilities.data_transformations.filtering import filter_by_date_range
-from utilities.data_transformations.aggregations import (
+from helpers.misc import setup_period_selection, get_wallet_options
+from helpers.data_transformations.filtering import filter_by_date_range
+from helpers.data_transformations.aggregations import (
     get_current_month_expenses,
     get_current_month_income,
     get_last_month_expenses,
@@ -19,7 +19,7 @@ from utilities.data_transformations.aggregations import (
     get_transactions_by_category_sorted,
     get_transactions_by_labels_sorted
 )
-from utilities.data_transformations.periods import (
+from helpers.data_transformations.periods import (
     get_available_periods,
     get_period_dates
 )

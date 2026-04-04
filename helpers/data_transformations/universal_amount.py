@@ -1,5 +1,5 @@
 import pandas as pd
-from utilities.data_transformations.rates import get_usd_clp_rates_map
+from helpers.data_transformations.rates import get_usd_clp_rates_map
 
 def create_universal_amount(df):
     """

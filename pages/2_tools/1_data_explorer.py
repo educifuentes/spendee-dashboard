@@ -6,12 +6,12 @@ import pandas as pd
 
 from datetime import date, timedelta
 from models.spendee.marts.bi_transactions import bi_transactions
-from utilities.data_connection_cloud_sql import (
+from helpers.data_connection_cloud_sql import (
     update_transaction, 
     delete_transaction,
     load_transactions
 )
-from utilities.ui_components.dataframe_column_display import dataframe_column_display
+from helpers.ui_components.dataframe_column_display import dataframe_column_display
 
 # Page content
 st.title("Data Explorer")
@@ -39,6 +39,6 @@ filtered_df = filtered_df[mask]
 st.markdown(f"**Showing {len(filtered_df)} transactions**")
 
 # --- Data Editor ---
-from utilities.ui_components.editable_dataframe import editable_transactions_dataframe
+from helpers.ui_components.editable_dataframe import editable_transactions_dataframe
 
 edited_data = editable_transactions_dataframe(filtered_df, key="transaction_editor")

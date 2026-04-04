@@ -3,7 +3,7 @@ import pandas as pd
 
 from models.spendee.marts.bi_transactions import bi_transactions
 
-from utilities.misc import st_dataframe_helper
+from helpers.misc import st_dataframe_helper
 
 from models.spendee.marts.pivot_tables._pivot_income_month import render_income_pivot_table
 

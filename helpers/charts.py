@@ -7,7 +7,7 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
-from utilities.data_transformations.aggregations import get_categories_ranked_by_amount
+from helpers.data_transformations.aggregations import get_categories_ranked_by_amount
 
 
 # ==========================================
@@ -125,7 +125,7 @@ def chart_expenses_by_period(df, period="Month"):
     return chart
 
 
-from utilities.constants.budgets import SORT_ORDER
+from helpers.constants.budgets import SORT_ORDER
 
 def chart_expenses_by_budget_month(df):
     """

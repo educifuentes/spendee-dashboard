@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utilities.data_connection_cloud_sql import (
+from helpers.data_connection_cloud_sql import (
     update_transaction, 
     delete_transaction,
     load_transactions

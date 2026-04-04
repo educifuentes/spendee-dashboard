@@ -4,7 +4,7 @@ import pandas as pd
 
 from models.spendee.marts.bi_transactions import bi_transactions
 
-from utilities.charts import (
+from helpers.charts import (
    render_transactions_tabbed_chart
 )
 

@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-from utilities.ui_components.icons import ICONS
-from utilities.ui_components.editable_dataframe import editable_transactions_dataframe
+from helpers.ui_components.icons import ICONS
+from helpers.ui_components.editable_dataframe import editable_transactions_dataframe
 
 
 def validate_transactions(df):

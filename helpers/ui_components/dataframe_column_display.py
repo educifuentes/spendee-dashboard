@@ -34,7 +34,7 @@ def dataframe_column_display(
             if col in df.columns:
                 column_config[col] = st.column_config.NumberColumn(
                     col.replace("_", " ").title(),
-                    format="$ %d"
+                    format="$%,.0f"
                 )
 
     # 2. Date Formatting
@@ -43,7 +43,7 @@ def dataframe_column_display(
             if col in df.columns:
                 column_config[col] = st.column_config.DateColumn(
                     col.replace("_", " ").title(),
-                    format="YYYY-MM-DD"
+                    format="DD/MM/YYYY"
                 )
 
     # 3. Selectbox Columns

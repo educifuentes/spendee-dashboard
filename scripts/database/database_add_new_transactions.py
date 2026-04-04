@@ -6,8 +6,8 @@ import sqlalchemy
 from sqlalchemy import text
 import tomli
 
-from utilities.constants.wallets import WALLETS
-from utilities.data_transformations.spendee_clean import add_spendee_record_hash
+from helpers.constants.wallets import WALLETS
+from helpers.data_transformations.spendee_clean import add_spendee_record_hash
 
 def get_db_connection():
     """
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)
         
-        # Add project root to sys.path to allow importing from utilities
+        # Add project root to sys.path to allow importing from helpers
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
             

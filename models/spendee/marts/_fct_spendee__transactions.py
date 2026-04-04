@@ -2,9 +2,9 @@ import pandas as pd
 
 from models.spendee.staging._stg_spendee__transactions import stg_spendee__transactions
 
-from utilities.constants.budgets import BUDGETS
-from utilities.data_transformations.periods import create_period_columns
-from utilities.data_transformations.universal_amount import create_universal_amount
+from helpers.constants.budgets import BUDGETS
+from helpers.data_transformations.periods import create_period_columns
+from helpers.data_transformations.universal_amount import create_universal_amount
 
 def int_spendee__transactions():
     df = stg_spendee__transactions()

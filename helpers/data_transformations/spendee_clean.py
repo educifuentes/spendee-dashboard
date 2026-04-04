@@ -1,6 +1,6 @@
 import pandas as pd
 import hashlib
-from utilities.constants.budgets import BUDGETS
+from helpers.constants.budgets import BUDGETS
 
 def load_budgets():
     """Returns the budget category mapping-."""

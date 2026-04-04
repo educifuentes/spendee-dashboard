@@ -2,7 +2,7 @@ import streamlit as st
 
 from models.spendee.marts.bi_transactions import bi_transactions
 
-from utilities.misc import st_dataframe_helper
+from helpers.misc import st_dataframe_helper
 
 df = bi_transactions()
 

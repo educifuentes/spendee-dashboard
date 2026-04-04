@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 import sys
 import os
-from utilities.ui_components.icons import ICONS
+from helpers.ui_components.icons import ICONS
 
 # Ensure scripts folder is importable
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +13,7 @@ project_root = os.path.dirname(os.path.dirname(current_dir))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from utilities.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash
+from helpers.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash
 from scripts.database_add_new_transactions import get_db_connection, get_latest_transaction_date, insert_new_transactions
 
 st.title(f"{ICONS['upload']} Upload Data to Cloud SQL")

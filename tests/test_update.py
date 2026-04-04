@@ -1,6 +1,6 @@
 import urllib.request
 import pandas as pd
-from utilities.data_connection_cloud_sql import load_transactions, update_transaction
+from helpers.data_connection_cloud_sql import load_transactions, update_transaction
 
 import logging
 logging.basicConfig(level=logging.DEBUG)

@@ -1,7 +1,7 @@
 import os
 import re
 
-from utilities.constants.wallets import WALLETS
+from helpers.constants.wallets import WALLETS
 
 data_dir = "seeds/new_transaction uploads"
 if not os.path.exists(data_dir):
