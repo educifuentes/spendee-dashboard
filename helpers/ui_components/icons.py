@@ -16,6 +16,7 @@ ICONS = {
     "layers": "layers_clear",
     "settings": "settings_input_component",
     "database": "database",
+    "upload": "upload",
     # validations   
     "check": "check_box",
     "warning": "warning",

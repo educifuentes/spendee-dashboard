@@ -15,7 +15,7 @@ from helpers.data_transformations.aggregations import get_categories_ranked_by_a
 # ==========================================
 def load_category_colors():
     """Load category color mappings from SCSS file."""
-    colors_path = Path(__file__).parent.parent / "utilities" / "constants" / "category_colors.scss"
+    colors_path = Path(__file__).parent / "constants" / "category_colors.scss"
     colors = {}
     
     if not colors_path.exists():
@@ -36,7 +36,7 @@ def load_category_colors():
 
 def load_budget_colors():
     """Load budget color mappings from JSON file."""
-    colors_path = Path(__file__).parent.parent / "utilities" / "constants" / "budget_colors.json"
+    colors_path = Path(__file__).parent / "constants" / "budget_colors.json"
     with open(colors_path, "r", encoding="utf-8") as f:
         return json.load(f)
     

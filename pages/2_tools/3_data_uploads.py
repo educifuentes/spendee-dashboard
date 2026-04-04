@@ -14,7 +14,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from helpers.data_transformations.spendee_clean import add_spendee_record_hash as add_record_hash
-from scripts.database_add_new_transactions import get_db_connection, get_latest_transaction_date, insert_new_transactions
+from scripts.database.database_add_new_transactions import get_db_connection, get_latest_transaction_date, insert_new_transactions
 
 st.title(f"{ICONS['upload']} Upload Data to Cloud SQL")
 st.write("Go to Spendee App and then Settings -> Advanced -> Export")

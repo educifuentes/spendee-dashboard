@@ -3,9 +3,9 @@ import pandas as pd
 
 from models.exposures.spendee._exp_transactions import exp_transactions
 
+from models.exposures.spendee._exp_income_by_month import exp_income_by_month
 from helpers.misc import st_dataframe_helper
 
-# _exp_income_by_month is empty; using fct_transactions directly
 
 df = exp_transactions()
 
