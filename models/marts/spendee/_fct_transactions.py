@@ -1,16 +1,13 @@
 import pandas as pd
 
-from models.spendee.staging._stg_spendee__transactions import stg_spendee__transactions
+from models.staging.spendee._stg_spendee__transactions import stg_spendee__transactions
 
 from helpers.constants.budgets import BUDGETS
 from helpers.data_transformations.periods import create_period_columns
 from helpers.data_transformations.universal_amount import create_universal_amount
 
-def int_spendee__transactions():
-
-    # rename
+def fct_transactions():
     df = stg_spendee__transactions()
-    df = df.rename(columns={"Date": "date", "Wallet": "wallet", "Type": "type", "Category name": "category", "Amount": "amount", "Currency": "currency", "Note": "note", "Labels": "labels", "Author": "author"})
 
     # new columns
     df = create_period_columns(df)

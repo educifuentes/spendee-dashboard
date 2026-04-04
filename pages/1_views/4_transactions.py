@@ -1,10 +1,10 @@
 import streamlit as st
 
-from models.spendee.marts.bi_transactions import bi_transactions
+from models.exposures.spendee._exp_transactions import exp_transactions
 
 from helpers.misc import st_dataframe_helper
 
-df = bi_transactions()
+df = exp_transactions()
 
 st.title(":material/receipt_long: Top 50 Expenses")
 

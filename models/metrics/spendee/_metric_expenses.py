@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-def get_mtd_expense_comparison(df):
+def metric_expenses(df):
     """
     Calculates MTD expenses for the current month and the same period last month.
     Returns: (current_mtd_total, last_mtd_total, percentage_change)

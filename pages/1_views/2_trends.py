@@ -2,7 +2,7 @@ import streamlit as st
 
 import pandas as pd
 
-from models.spendee.marts.bi_transactions import bi_transactions
+from models.exposures.spendee._exp_transactions import exp_transactions
 
 from helpers.charts import (
    render_transactions_tabbed_chart
@@ -11,7 +11,7 @@ from helpers.charts import (
 
 
 
-df = bi_transactions()
+df = exp_transactions()
 
 # last 5 months
 df = df[df["date"] >= df["date"].max() - pd.Timedelta(days=6 * 30)]

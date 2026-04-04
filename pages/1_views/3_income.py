@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
 
-from models.spendee.marts.bi_transactions import bi_transactions
+from models.exposures.spendee._exp_transactions import exp_transactions
 
 from helpers.misc import st_dataframe_helper
 
-from models.spendee.marts.pivot_tables._pivot_income_month import render_income_pivot_table
+# _exp_income_by_month is empty; using fct_transactions directly
 
-df = bi_transactions()
+df = exp_transactions()
 
 st.title(":material/inventory_2: Income Report")
 
-income_df = render_income_pivot_table(df)
+income_df = exp_income_by_month(df)
 
 st.divider()
 

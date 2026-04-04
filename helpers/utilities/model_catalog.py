@@ -20,10 +20,10 @@ def build_global_model_registry(root_path="models"):
         path_parts = rel_path.split(os.sep)
         
         if len(path_parts) >= 1:
-            schema = path_parts[0]
+            stage = path_parts[0]
             
-            # If there's a subfolder, it's the stage. Otherwise, assume 'core'.
-            stage = path_parts[1] if len(path_parts) >= 2 else "core"
+            # If there's a subfolder, it's the schema. Otherwise, assume 'core'.
+            schema = path_parts[1] if len(path_parts) >= 2 else "core"
             
             for file in filenames:
                 if file == "__init__.py" or not file.endswith(".py"):

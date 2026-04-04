@@ -1,6 +1,6 @@
 import streamlit as st
 
-from models.spendee.marts.bi_transactions import bi_transactions
+from models.exposures.spendee._exp_transactions import exp_transactions
 
 from helpers.misc import st_dataframe_helper
 
@@ -10,7 +10,7 @@ st.set_page_config(page_title="Search Transactions", page_icon=":material/search
 st.title("Search Transactions")
 
 # Load data
-df = bi_transactions()
+df = exp_transactions()
 
 # Search Inputs
 col1, col2 = st.columns(2)

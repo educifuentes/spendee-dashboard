@@ -1,6 +1,6 @@
 import streamlit as st
 
-from helpers.get_version import get_git_version
+from helpers.get_version import get_app_version
 
 # ==========================================
 # Page Configuration
@@ -41,6 +41,6 @@ pg = st.navigation({
 })
 
 with st.sidebar:
-    st.caption(f"Version: {get_git_version()}")
+    st.caption(f"Version: {get_app_version()}")
 
 pg.run()

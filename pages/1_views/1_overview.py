@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 
-from models.spendee.marts.bi_transactions import bi_transactions
-from models.spendee.marts.metrics.expense_metrics import get_mtd_expense_comparison
+from models.exposures.spendee._exp_transactions import exp_transactions
+from models.metrics.spendee._metric_expenses import metric_expenses
 
 from helpers.charts import (
     bar_chart_by_category,
@@ -25,7 +25,7 @@ from helpers.data_transformations.periods import (
 )
 
 # 1. Load Data
-fct_transactions_df = bi_transactions()
+fct_transactions_df = exp_transactions()
 
 # 2. Header & Metrics
 st.title(":material/paid: Spendee Expense Dashboard")
@@ -34,7 +34,7 @@ st.info(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transac
 m1, m2, m3, m4 = st.columns(4)
 
 # MTD Comparison for primary metric
-curr_mtd, last_mtd, pct_change = get_mtd_expense_comparison(fct_transactions_df)
+curr_mtd, last_mtd, pct_change = metric_expenses(fct_transactions_df)
 
 m1.metric(
     "MTD Expenses vs Last Month", 

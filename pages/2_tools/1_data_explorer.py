@@ -5,7 +5,7 @@ import streamlit as st
 import pandas as pd
 
 from datetime import date, timedelta
-from models.spendee.marts.bi_transactions import bi_transactions
+from models.exposures.spendee._exp_transactions import exp_transactions
 from helpers.data_connection_cloud_sql import (
     update_transaction, 
     delete_transaction,
@@ -17,7 +17,7 @@ from helpers.ui_components.dataframe_column_display import dataframe_column_disp
 st.title("Data Explorer")
 
 # Load data - computed columns will be read-only
-df = bi_transactions()
+df = exp_transactions()
 if "date" in df.columns:
     df = df.sort_values("date", ascending=False)
 
