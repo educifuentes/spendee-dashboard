@@ -2,7 +2,14 @@ import streamlit as st
 import pandas as pd
 
 from models.spendee.marts.bi_transactions import bi_transactions
+from models.spendee.marts.metrics.expense_metrics import get_mtd_expense_comparison
 
+from utilities.charts import (
+    bar_chart_by_category,
+    bar_chart_by_budget,
+    render_transactions_tabbed_chart
+)
+from utilities.misc import setup_period_selection, get_wallet_options
 from utilities.data_transformations.filtering import filter_by_date_range
 from utilities.data_transformations.aggregations import (
     get_current_month_expenses,
@@ -16,20 +23,12 @@ from utilities.data_transformations.periods import (
     get_available_periods,
     get_period_dates
 )
-from models.spendee.marts.metrics.expense_metrics import get_mtd_expense_comparison
-from utilities.charts import (
-    bar_chart_by_category,
-    bar_chart_by_budget,
-    render_transactions_tabbed_chart
-)
-from utilities.misc import setup_period_selection, get_wallet_options
 
 # 1. Load Data
 fct_transactions_df = bi_transactions()
 
 # 2. Header & Metrics
 st.title(":material/paid: Spendee Expense Dashboard")
-st.markdown("### test deploy")
 st.info(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
 
 m1, m2, m3, m4 = st.columns(4)
@@ -47,7 +46,7 @@ m1.metric(
 # Keep other monthly totals for context
 curr_exp = get_current_month_expenses(fct_transactions_df)
 last_exp = get_last_month_expenses(fct_transactions_df)
-m2.metric("Current Month Total", f"${curr_exp:,.0f}")
+m2.metric("Current Month Expenses", f"${curr_exp:,.0f}")
 m3.metric("Current Month Income", f"${get_current_month_income(fct_transactions_df):,.0f}")
 m4.metric("Last Month Income", f"${get_last_month_income(fct_transactions_df):,.0f}")
 
@@ -66,15 +65,15 @@ with c1:
 with c2:
     selected_label = st.selectbox(granularity, period_options, index=default_index, key="selected_period_label")
 with c3:
-    selected_wallet = st.selectbox("Wallet", get_wallet_options(fct_transactions_df), index=0)
+    selected_wallets = st.multiselect("Wallets", get_wallet_options(fct_transactions_df, include_all=False))
 
 start_date, end_date = get_period_dates(granularity, period_values[selected_label])
 
 # Helper for inline filtering based on current selection
 def get_filtered_data(df, type_filter=None):
     data = filter_by_date_range(df, start_date, end_date)
-    if selected_wallet != "All":
-        data = data[data["wallet"] == selected_wallet]
+    if selected_wallets:
+        data = data[data["wallet"].isin(selected_wallets)]
     if type_filter:
         data = data[data["type"] == type_filter]
     return data
