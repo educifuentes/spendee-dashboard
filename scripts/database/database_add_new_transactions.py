@@ -63,12 +63,13 @@ def get_latest_transaction_date(engine=None):
         engine = get_db_connection()
         
     try:
-        query = "SELECT MAX(date) as max_date FROM stg_transaction"
-        df = pd.read_sql(query, engine)
-        max_date = df["max_date"].iloc[0]
-        if pd.notnull(max_date):
-            return pd.to_datetime(max_date)
-        return None
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT MAX(date) as max_date FROM stg_transaction"))
+            row = result.fetchone()
+            max_date = row[0] if row else None
+            if max_date is not None and pd.notnull(max_date):
+                return pd.to_datetime(max_date)
+            return None
     except Exception as e:
         print(f"Error fetching latest date: {e}")
         return None
@@ -90,13 +91,9 @@ def insert_new_transactions(df, engine=None):
     table_name = "stg_transaction"
     
     try:
-        # Check if table exists, create if not (using the logic from load_transactions if needed)
-        # For now, we assume table exists as this is an "add new" script. 
-        # But we should probably use the check_and_create logic if we want to be robust.
-        # Let's trust the load script did its job or the table exists.
-        
         print(f"Inserting {len(df)} rows into '{table_name}'...")
-        df.to_sql(table_name, engine, if_exists='append', index=False, chunksize=1000)
+        with engine.begin() as conn:
+            df.to_sql(table_name, conn, if_exists='append', index=False, chunksize=1000)
         print("Data inserted successfully.")
         return len(df)
     except Exception as e:
