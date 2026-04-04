@@ -43,31 +43,3 @@ To deploy the application to Google Cloud Run, ensure you have the `gcloud` CLI 
 
 ./scripts/release.sh
 ```
-
-This script will:
-
-1. Upload secrets to GCP Secret Manager (using `scripts/upload_secrets.sh`).
-2. Grant necessary IAM permissions.
-3. Build the Docker image using Cloud Build.
-4. Deploy to Cloud Run.
-
-## Reload Database
-
-To completely reset the database with the full transaction history, run these two scripts in order:
-
-1. **Clean Data**: Exports the latest transactions from the models to a CSV file.
-
-   ```bash
-   python scripts/clean_data_transactions_to_csv.py
-   ```
-
-2. **Reload Database**: Deletes all existing rows in the database and reloads them from the CSV.
-   ```bash
-   python scripts/load_transactions_cloud_sql.py
-   ```
-
-## Features
-
-- **KPI Panel**: Current month expenses with percentage change vs last month
-- **Interactive Filters**: Date range, granularity, category, and label filters
-- **Visualizations**: Expenses by category, by month, and top transactions
