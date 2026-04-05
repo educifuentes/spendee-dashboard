@@ -1,84 +1,147 @@
+"""
+Database connection layer — SQLite backend (GCS-hosted).
+
+The SQLite file lives at /tmp/expenses.sqlite and is downloaded from GCS on
+first access. After any write operation (INSERT / UPDATE / DELETE) the file
+is immediately uploaded back so the remote copy stays in sync.
+
+All public function signatures are identical to the previous Cloud SQL version
+so that no other code needs to change.
+"""
+
+import os
 import streamlit as st
 import pandas as pd
-from google.cloud.sql.connector import Connector
 import sqlalchemy
+from sqlalchemy import text
+
+from helpers.gcs_handler import download_db, upload_db
+
+LOCAL_DB_PATH = "/tmp/expenses.sqlite"
+STAGING_TABLE = "stg_transaction"
+
+
+# ---------------------------------------------------------------------------
+# Engine — cached for the lifetime of the Streamlit session
+# ---------------------------------------------------------------------------
 
 @st.cache_resource
 def get_engine():
-    # Initialize Connector inside the cached function
-    connector = Connector()
-    
-    def getconn():
-        return connector.connect(
-            st.secrets["gcp_cloud_sql"]["INSTANCE_CONNECTION_NAME"],
-            "pg8000",
-            user=st.secrets["gcp_cloud_sql"]["DB_USER"],
-            password=st.secrets["gcp_cloud_sql"]["DB_PASS"],
-            db=st.secrets["gcp_cloud_sql"]["DB_NAME"],
-        )
-        
-    pool = sqlalchemy.create_engine(
-        "postgresql+pg8000://",
-        creator=getconn,
+    """
+    Return a SQLAlchemy engine pointing at the local SQLite file.
+    Downloads the file from GCS first if it's not already present.
+    """
+    download_db()                               # no-op if file already exists
+    engine = sqlalchemy.create_engine(
+        f"sqlite:///{LOCAL_DB_PATH}",
+        connect_args={"check_same_thread": False},
     )
-    return pool
+    return engine
+
+
+# ---------------------------------------------------------------------------
+# Read helpers
+# ---------------------------------------------------------------------------
 
 @st.cache_data(ttl=600)
-def load_transactions():
+def load_stg_transactions() -> pd.DataFrame:
     """
-    Loads all transactions from the Cloud SQL 'transactions' table into a pandas DataFrame.
+    Load all rows from the staging table into a DataFrame.
+    (Previously pointed at Cloud SQL stg_transaction table.)
     """
-    pool = get_engine()
-    
-    with pool.connect() as db_conn:
-        # Use pandas read_sql for convenience
-        df = pd.read_sql("SELECT * FROM transactions", db_conn)
-    
+    engine = get_engine()
+    with engine.connect() as conn:
+        df = pd.read_sql(f"SELECT * FROM {STAGING_TABLE}", conn)
     return df
+
 
 @st.cache_data(ttl=600)
-def load_stg_transactions():
+def load_transactions() -> pd.DataFrame:
     """
-    Loads all transactions from the Cloud SQL 'stg_transaction' staging table into a pandas DataFrame.
-    This table contains the raw data loaded via scripts before any transformations.
+    Alias for load_stg_transactions() — kept for backwards compatibility.
     """
-    pool = get_engine()
-    
-    with pool.connect() as db_conn:
-        df = pd.read_sql("SELECT * FROM stg_transaction", db_conn)
-    
-    return df
+    return load_stg_transactions()
 
-def update_transaction(transaction_id, changes):
-    """
-    Update a transaction in Cloud SQL.
-    changes: dict of column name -> new value
-    """
-    pool = get_engine()
-    with pool.connect() as conn:
-        # Construct SET clause dynamically
-        # Be careful with SQL injection; use parameters
-        set_clauses = []
-        params = {"id": transaction_id}
-        
-        for i, (col, val) in enumerate(changes.items()):
-            param_name = f"val_{i}"
-            set_clauses.append(f"{col} = :{param_name}")
-            params[param_name] = val
-            
-        if not set_clauses:
-            return
 
-        stmt = sqlalchemy.text(f"UPDATE transactions SET {', '.join(set_clauses)} WHERE id = :id")
+def get_latest_transaction_date(engine=None):
+    """
+    Return the most recent date in the staging table, or None if empty.
+    """
+    if engine is None:
+        engine = get_engine()
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(f"SELECT MAX(date) AS max_date FROM {STAGING_TABLE}"))
+            row = result.fetchone()
+            max_date = row[0] if row else None
+            if max_date is not None and pd.notnull(max_date):
+                return pd.to_datetime(max_date)
+    except Exception as e:
+        print(f"[data_connection] Error fetching latest date: {e}")
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Write helpers  (each one triggers an upload_db() immediately after)
+# ---------------------------------------------------------------------------
+
+def insert_new_transactions(df: pd.DataFrame, engine=None) -> int:
+    """
+    Append new rows to the staging table and sync to GCS.
+    Returns the number of rows inserted.
+    """
+    if df.empty:
+        return 0
+    if engine is None:
+        engine = get_engine()
+
+    with engine.begin() as conn:
+        df.to_sql(STAGING_TABLE, conn, if_exists="append", index=False, chunksize=1000)
+
+    # Persist to GCS immediately
+    upload_db()
+
+    # Bust the cache so the next read reflects the new rows
+    st.cache_data.clear()
+
+    return len(df)
+
+
+def update_transaction(transaction_id, changes: dict) -> None:
+    """
+    Update a single transaction row and sync the updated DB to GCS.
+    changes: dict of {column_name: new_value}
+    """
+    if not changes:
+        return
+
+    engine = get_engine()
+    set_clauses = []
+    params = {"id": transaction_id}
+
+    for i, (col, val) in enumerate(changes.items()):
+        param_name = f"val_{i}"
+        set_clauses.append(f"{col} = :{param_name}")
+        params[param_name] = val
+
+    stmt = text(f"UPDATE {STAGING_TABLE} SET {', '.join(set_clauses)} WHERE id = :id")
+
+    with engine.begin() as conn:
         conn.execute(stmt, params)
-        conn.commit()
 
-def delete_transaction(transaction_id):
+    upload_db()
+    st.cache_data.clear()
+
+
+def delete_transaction(transaction_id) -> None:
     """
-    Delete a transaction from Cloud SQL.
+    Delete a transaction row and sync the updated DB to GCS.
     """
-    pool = get_engine()
-    with pool.connect() as conn:
-        stmt = sqlalchemy.text("DELETE FROM transactions WHERE id = :id")
+    engine = get_engine()
+    stmt = text(f"DELETE FROM {STAGING_TABLE} WHERE id = :id")
+
+    with engine.begin() as conn:
         conn.execute(stmt, {"id": transaction_id})
-        conn.commit()
+
+    upload_db()
+    st.cache_data.clear()

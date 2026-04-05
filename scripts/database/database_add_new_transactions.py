@@ -1,59 +1,29 @@
 #!/usr/bin/env python3
 import os
+import sys
 import pandas as pd
-from google.cloud.sql.connector import Connector
 import sqlalchemy
 from sqlalchemy import text
 import tomli
 
 from helpers.constants.wallets import WALLETS
 from helpers.data_transformations.spendee_clean import add_spendee_record_hash
+from helpers.gcs_handler import download_db, upload_db
+
+LOCAL_DB_PATH = "/tmp/expenses.sqlite"
+STAGING_TABLE = "stg_transaction"
+
 
 def get_db_connection():
     """
-    Establishes a connection to the Cloud SQL instance using configuration from secrets.toml.
-    Returns a SQLAlchemy engine.
+    Returns a SQLAlchemy engine pointing at the local SQLite file.
+    Call download_db() before this if running outside of Streamlit.
     """
-    # Load secrets
-    secrets_path = ".streamlit/secrets.toml"
-    # Handle cases where script is run from different directories
-    if not os.path.exists(secrets_path):
-        # Try finding it relative to the script location if run directly
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(current_dir)
-        secrets_path = os.path.join(project_root, ".streamlit", "secrets.toml")
-        
-    if not os.path.exists(secrets_path):
-        raise FileNotFoundError(f"Secrets file not found at {secrets_path}")
-
-    with open(secrets_path, "rb") as f:
-        secrets = tomli.load(f)
-
-    db_config = secrets["gcp_cloud_sql"]
-    
-    instance_connection_name = db_config["INSTANCE_CONNECTION_NAME"]
-    db_user = db_config["DB_USER"]
-    db_pass = db_config["DB_PASS"]
-    db_name = db_config["DB_NAME"]
-
-    connector = Connector()
-    # Define the connector creation function
-    def getconn():
-        conn = connector.connect(
-            instance_connection_name,
-            "pg8000",
-            user=db_user,
-            password=db_pass,
-            db=db_name,
-        )
-        return conn
-
-    # Create the SQLAlchemy engine
-    pool = sqlalchemy.create_engine(
-        "postgresql+pg8000://",
-        creator=getconn,
+    engine = sqlalchemy.create_engine(
+        f"sqlite:///{LOCAL_DB_PATH}",
+        connect_args={"check_same_thread": False},
     )
-    return pool
+    return engine
 
 def get_latest_transaction_date(engine=None):
     """
@@ -76,7 +46,7 @@ def get_latest_transaction_date(engine=None):
 
 def insert_new_transactions(df, engine=None):
     """
-    Inserts new transactions into the database.
+    Inserts new transactions into the staging table.
     Args:
         df: DataFrame containing the new transactions.
         engine: SQLAlchemy engine (optional).
@@ -88,13 +58,12 @@ def insert_new_transactions(df, engine=None):
     if engine is None:
         engine = get_db_connection()
     
-    table_name = "stg_transaction"
-    
     try:
-        print(f"Inserting {len(df)} rows into '{table_name}'...")
+        print(f"Inserting {len(df)} rows into '{STAGING_TABLE}'...")
         with engine.begin() as conn:
-            df.to_sql(table_name, conn, if_exists='append', index=False, chunksize=1000)
+            df.to_sql(STAGING_TABLE, conn, if_exists='append', index=False, chunksize=1000)
         print("Data inserted successfully.")
+        upload_db()   # sync to GCS immediately
         return len(df)
     except Exception as e:
         print(f"Error inserting data: {e}")
@@ -102,18 +71,19 @@ def insert_new_transactions(df, engine=None):
 
 if __name__ == "__main__":
     import re
-    import sys
 
     try:
         # Handle cases where script is run from different directories
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(current_dir)
+        project_root = os.path.dirname(os.path.dirname(current_dir))
         
         # Add project root to sys.path to allow importing from helpers
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
-            
-       
+
+        # Download the SQLite DB from GCS before querying
+        print("Downloading SQLite DB from GCS...")
+        download_db(force=True)
         
         # Define the path to the seeds directory
         # The user's exports are either here or in seeds/new_transaction uploads
