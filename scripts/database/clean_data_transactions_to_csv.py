@@ -3,12 +3,14 @@ import sys
 import pandas as pd
 from datetime import datetime
 
+
+
 # Add the project root to the python path so we can import from models
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from models.spendee.marts._fct_transactions import fct_transactions
+from models.marts.spendee._fct_transactions import fct_transactions
 
 def export_transactions_to_csv(output_path=None):
     """
@@ -25,7 +27,7 @@ def export_transactions_to_csv(output_path=None):
         # Default path setup
         if output_path is None:
             # Get project root
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             seeds_dir = os.path.join(base_dir, "seeds", "uploads")
             
             # Create directory if it doesn't exist

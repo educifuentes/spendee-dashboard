@@ -1,25 +1,8 @@
-import pandas as pd
-
-from models.staging.spendee._stg_spendee__transactions import stg_spendee__transactions
-
-from helpers.constants.budgets import BUDGETS
-from helpers.data_transformations.periods import create_period_columns
-from helpers.data_transformations.universal_amount import create_universal_amount
+from models.intermediate.spendee._int_spendee__transactions import int_spendee__transactions
 
 def fct_transactions():
-    df = stg_spendee__transactions()
-
-    # new columns
-    df = create_period_columns(df)
-    df = create_universal_amount(df)
-
-    # Enrich with budget category mapping
-    df["budget"] = df["category"].map(BUDGETS).fillna("Otros")
-    
-    # transform
-    df["amount"] = df["amount"].abs()
-
-    # drop columns
-    df = df.drop(columns=["author"])
-
-    return df
+    """
+    Fact table for transactions. 
+    Now simply calls the intermediate model to maintain the standard pipeline flow.
+    """
+    return int_spendee__transactions()
