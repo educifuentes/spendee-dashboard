@@ -10,11 +10,17 @@ Secrets layout expected in .streamlit/secrets.toml:
     [gcp_gcs]
     BUCKET_NAME = "your-bucket-name"
     DB_PATH     = "expenses.sqlite"   # object path inside the bucket
+
+Local development shortcut:
+    Set the environment variable LOCAL_DB_PATH to point at a local SQLite file
+    and GCS download will be skipped entirely.
+    Example: export LOCAL_DB_PATH=/path/to/spendee-dashboard/seeds/uploads/expenses.sqlite
 """
 
 import os
 
-LOCAL_DB_PATH = "/tmp/expenses.sqlite"
+# Allow overriding the DB path for local development (skips GCS download)
+LOCAL_DB_PATH = os.environ.get("LOCAL_DB_PATH", "/tmp/expenses.sqlite")
 
 # ---------------------------------------------------------------------------
 # Internal helpers
