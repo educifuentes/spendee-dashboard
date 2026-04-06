@@ -47,9 +47,11 @@ def get_sqlite_engine() -> sqlalchemy.Engine:
 # Main
 # ---------------------------------------------------------------------------
 
-def migrate():
+LOCAL_COPY_PATH = _project_root / "seeds" / "uploads" / "expenses.sqlite"
+
+def migrate(upload_to_gcs: bool = True):
     print("=" * 60)
-    print("  Spendee: CSV → SQLite → GCS seed")
+    print("  Spendee: CSV → SQLite seed")
     print("=" * 60)
 
     # 1. Read CSV
@@ -78,12 +80,26 @@ def migrate():
         count = conn.execute(sqlalchemy.text(f"SELECT COUNT(*) FROM {STAGING_TABLE}")).scalar()
     print(f"      SQLite table '{STAGING_TABLE}' has {count:,} rows. ✅")
 
-    # 3. Upload to GCS
-    print("\n[3/3] Uploading SQLite file to GCS ...")
-    upload_db()
-    print("\n✅  Done! The GCS bucket now contains a seeded SQLite database.")
-    print("    You can safely disable Cloud SQL and remove its credentials from secrets.toml.")
+    # 2b. Copy SQLite file to seeds/uploads/ for easy manual access
+    import shutil
+    shutil.copy2(LOCAL_DB_PATH, LOCAL_COPY_PATH)
+    print(f"\n      📁 Local copy saved to: {LOCAL_COPY_PATH.relative_to(_project_root)}")
+
+    # 3. Upload to GCS (optional)
+    if upload_to_gcs:
+        print("\n[3/3] Uploading SQLite file to GCS ...")
+        upload_db()
+        print("\n✅  Done! The GCS bucket now contains a seeded SQLite database.")
+    else:
+        print("\n[3/3] Skipping GCS upload (upload_to_gcs=False).")
+        print(f"\n✅  Done! SQLite file ready at:")
+        print(f"      {LOCAL_COPY_PATH}")
+        print(f"\n   Upload it manually to your GCS bucket, then update secrets.toml with the correct BUCKET_NAME.")
 
 
 if __name__ == "__main__":
-    migrate()
+    import argparse
+    parser = argparse.ArgumentParser(description="Seed the Spendee SQLite database.")
+    parser.add_argument("--skip-gcs", action="store_true", help="Skip uploading the SQLite file to GCS.")
+    args = parser.parse_args()
+    migrate(upload_to_gcs=not args.skip_gcs)

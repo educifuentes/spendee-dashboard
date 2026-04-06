@@ -1,22 +1,18 @@
 """
 GCS Handler — Download-Query-Upload pattern for SQLite persistence.
 
-Uses the GCS JSON REST API with an API key (no service-account JSON needed).
-The key must have the "Cloud Storage API" enabled in GCP and the target
-bucket must be accessible (Storage Object Viewer / Creator at minimum).
+Uses the official google-cloud-storage SDK which authenticates via
+Application Default Credentials (ADC). Run `gcloud auth application-default login`
+locally, or attach a service account to the Cloud Run deployment.
 
 Secrets layout expected in .streamlit/secrets.toml:
 
     [gcp_gcs]
     BUCKET_NAME = "your-bucket-name"
     DB_PATH     = "expenses.sqlite"   # object path inside the bucket
-
-    [gcp_cloud_sql]
-    API_KEY_BUCKET = "AIzaSy..."      # re-used from existing section
 """
 
 import os
-import requests as _requests
 
 LOCAL_DB_PATH = "/tmp/expenses.sqlite"
 
@@ -26,32 +22,28 @@ LOCAL_DB_PATH = "/tmp/expenses.sqlite"
 
 def _get_gcs_config():
     """
-    Read GCS config from st.secrets.
-    Falls back to reading .streamlit/secrets.toml via tomli when running
-    outside of a Streamlit context (e.g., standalone migration scripts).
+    Read GCS config from st.secrets (Streamlit context) or secrets.toml (scripts).
+    Returns (bucket_name, db_path).
     """
     try:
         import streamlit as st
         bucket  = st.secrets["gcp_gcs"]["BUCKET_NAME"]
         db_path = st.secrets["gcp_gcs"]["DB_PATH"]
-        api_key = st.secrets["gcp_cloud_sql"]["API_KEY_BUCKET"]
     except Exception:
-        # Fallback for scripts run outside Streamlit
         import tomli, pathlib
         secrets_file = pathlib.Path(__file__).parents[1] / ".streamlit" / "secrets.toml"
         with open(secrets_file, "rb") as f:
             secrets = tomli.load(f)
         bucket  = secrets["gcp_gcs"]["BUCKET_NAME"]
         db_path = secrets["gcp_gcs"]["DB_PATH"]
-        api_key = secrets["gcp_cloud_sql"]["API_KEY_BUCKET"]
 
-    return bucket, db_path, api_key
+    return bucket, db_path
 
 
-def _gcs_object_url(bucket: str, db_path: str) -> str:
-    """Return the GCS JSON API object URL (URL-encoded object name)."""
-    encoded = _requests.utils.quote(db_path, safe="")
-    return f"https://storage.googleapis.com/storage/v1/b/{bucket}/o/{encoded}"
+def _get_gcs_client():
+    """Return an authenticated google.cloud.storage.Client using ADC."""
+    from google.cloud import storage
+    return storage.Client()
 
 
 # ---------------------------------------------------------------------------
@@ -70,39 +62,36 @@ def download_db(force: bool = False) -> bool:
     Returns
     -------
     bool
-        True if the file exists locally (either already present or downloaded 
-        successfully). False if the download failed (e.g. 404).
+        True if the file exists locally after this call, False otherwise.
     """
     if not force and os.path.exists(LOCAL_DB_PATH):
         return True  # already present, nothing to do
 
-    bucket, db_path, api_key = _get_gcs_config()
-    url = _gcs_object_url(bucket, db_path)
+    bucket_name, db_path = _get_gcs_config()
+    print(f"[gcs_handler] Downloading gs://{bucket_name}/{db_path} → {LOCAL_DB_PATH}")
 
-    print(f"[gcs_handler] Downloading gs://{bucket}/{db_path} → {LOCAL_DB_PATH}")
     try:
-        resp = _requests.get(url, params={"alt": "media", "key": api_key}, stream=True)
-        
-        if resp.status_code == 404:
-            print(f"[gcs_handler] ⚠️  Warning: SQLite file not found in GCS (404).")
-            print(f"               Bucket: {bucket} | Path: {db_path}")
+        client = _get_gcs_client()
+        bucket = client.bucket(bucket_name)
+        blob   = bucket.blob(db_path)
+
+        if not blob.exists():
+            print(f"[gcs_handler] ⚠️  Warning: SQLite file not found in GCS.")
+            print(f"               Bucket: {bucket_name} | Path: {db_path}")
             print(f"               The app will start with a brand new (empty) database.")
             return False
-            
-        resp.raise_for_status()
+
+        os.makedirs(os.path.dirname(LOCAL_DB_PATH), exist_ok=True)
+        blob.download_to_filename(LOCAL_DB_PATH)
+        print("[gcs_handler] Download complete.")
+        return True
+
     except Exception as e:
         print(f"[gcs_handler] ❌  Error downloading database: {e}")
         if os.path.exists(LOCAL_DB_PATH):
-            print(f"[gcs_handler] Using existing local file since download failed.")
+            print("[gcs_handler] Using existing local file since download failed.")
             return True
         return False
-
-    os.makedirs(os.path.dirname(LOCAL_DB_PATH), exist_ok=True)
-    with open(LOCAL_DB_PATH, "wb") as fh:
-        for chunk in resp.iter_content(chunk_size=8192):
-            fh.write(chunk)
-    print("[gcs_handler] Download complete.")
-    return True
 
 
 def upload_db() -> None:
@@ -113,30 +102,16 @@ def upload_db() -> None:
     if not os.path.exists(LOCAL_DB_PATH):
         raise FileNotFoundError(f"[gcs_handler] Local DB not found at {LOCAL_DB_PATH}")
 
-    bucket, db_path, api_key = _get_gcs_config()
-    upload_url = (
-        f"https://storage.googleapis.com/upload/storage/v1/b/{bucket}/o"
-        f"?uploadType=media&name={_requests.utils.quote(db_path, safe='')}&key={api_key}"
-    )
-
-    print(f"[gcs_handler] Uploading {LOCAL_DB_PATH} → gs://{bucket}/{db_path}")
-    with open(LOCAL_DB_PATH, "rb") as fh:
-        data = fh.read()
+    bucket_name, db_path = _get_gcs_config()
+    print(f"[gcs_handler] Uploading {LOCAL_DB_PATH} → gs://{bucket_name}/{db_path}")
 
     try:
-        resp = _requests.post(
-            upload_url,
-            data=data,
-            headers={"Content-Type": "application/octet-stream"},
-        )
-        
-        if resp.status_code == 404:
-            print(f"[gcs_handler] ❌  Upload failed with 404 Not Found.")
-            print(f"               This usually means the bucket '{bucket}' does not exist.")
-            print(f"               Please verify BUCKET_NAME in .streamlit/secrets.toml matches your GCP project.")
-            
-        resp.raise_for_status()
+        client = _get_gcs_client()
+        bucket = client.bucket(bucket_name)
+        blob   = bucket.blob(db_path)
+        blob.upload_from_filename(LOCAL_DB_PATH, content_type="application/octet-stream")
         print("[gcs_handler] Upload complete.")
+
     except Exception as e:
         print(f"[gcs_handler] ❌  Error uploading database: {e}")
         raise e
