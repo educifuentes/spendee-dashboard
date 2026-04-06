@@ -1,7 +1,10 @@
 import pandas as pd
 
 from helpers.sqlite_loader import load_from_sqlite
+
+from helpers.data_transformations.periods import create_period_columns
 from helpers.data_transformations.universal_amount import create_universal_amount
+
 from helpers.constants.budgets import BUDGETS
 
 
@@ -19,6 +22,7 @@ def exp_transactions():
     # new columns
 
     df = create_universal_amount(df)
+    df = create_period_columns(df)
 
     # Enrich with budget category mapping
     df["budget"] = df["category"].map(BUDGETS).fillna("Otros")
