@@ -21,12 +21,5 @@ def fct_transactions():
 
     # drop columns
     df = df.drop(columns=["author"])
-    
-    # Reorder columns: place amount_universal_clp after currency
-    cols = df.columns.tolist()
-    if "amount_universal_clp" in cols and "currency" in cols:
-        cols.remove("amount_universal_clp")
-        currency_index = cols.index("currency")
-        cols.insert(currency_index + 1, "amount_universal_clp")
-        df = df[cols]
+
     return df
