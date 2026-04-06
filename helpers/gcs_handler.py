@@ -58,7 +58,7 @@ def _gcs_object_url(bucket: str, db_path: str) -> str:
 # Public API
 # ---------------------------------------------------------------------------
 
-def download_db(force: bool = False) -> None:
+def download_db(force: bool = False) -> bool:
     """
     Download expenses.sqlite from GCS to LOCAL_DB_PATH.
 
@@ -66,22 +66,43 @@ def download_db(force: bool = False) -> None:
     ----------
     force : bool
         If True, always re-download even if the local file already exists.
+
+    Returns
+    -------
+    bool
+        True if the file exists locally (either already present or downloaded 
+        successfully). False if the download failed (e.g. 404).
     """
     if not force and os.path.exists(LOCAL_DB_PATH):
-        return  # already present, nothing to do
+        return True  # already present, nothing to do
 
     bucket, db_path, api_key = _get_gcs_config()
     url = _gcs_object_url(bucket, db_path)
 
     print(f"[gcs_handler] Downloading gs://{bucket}/{db_path} → {LOCAL_DB_PATH}")
-    resp = _requests.get(url, params={"alt": "media", "key": api_key}, stream=True)
-    resp.raise_for_status()
+    try:
+        resp = _requests.get(url, params={"alt": "media", "key": api_key}, stream=True)
+        
+        if resp.status_code == 404:
+            print(f"[gcs_handler] ⚠️  Warning: SQLite file not found in GCS (404).")
+            print(f"               Bucket: {bucket} | Path: {db_path}")
+            print(f"               The app will start with a brand new (empty) database.")
+            return False
+            
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"[gcs_handler] ❌  Error downloading database: {e}")
+        if os.path.exists(LOCAL_DB_PATH):
+            print(f"[gcs_handler] Using existing local file since download failed.")
+            return True
+        return False
 
     os.makedirs(os.path.dirname(LOCAL_DB_PATH), exist_ok=True)
     with open(LOCAL_DB_PATH, "wb") as fh:
         for chunk in resp.iter_content(chunk_size=8192):
             fh.write(chunk)
     print("[gcs_handler] Download complete.")
+    return True
 
 
 def upload_db() -> None:

@@ -27,15 +27,20 @@ from helpers.gcs_handler import LOCAL_DB_PATH, download_db
 
 _engine: sqlalchemy.Engine | None = None
 
+# Fallback schema for when the database is empty or missing
+_SCHEMA_FALLBACK = [
+    'date', 'wallet', 'type', 'category', 'amount', 'currency', 'note', 'labels',
+    'day', 'week', 'month', 'year', 'amount_universal_clp', 'budget', 'record_hash', 'id'
+]
 
-def _get_engine() -> sqlalchemy.Engine:
+
+def _get_engine() -> sqlalchemy.Engine | None:
     global _engine
     if _engine is None:
         if not os.path.exists(LOCAL_DB_PATH):
-            raise FileNotFoundError(
-                f"[sqlite_loader] DB not found at {LOCAL_DB_PATH}. "
-                "Call download_db() first or run the seed script."
-            )
+            print(f"[sqlite_loader] ⚠️  Warning: DB not found at {LOCAL_DB_PATH}.")
+            return None
+            
         _engine = sqlalchemy.create_engine(
             f"sqlite:///{LOCAL_DB_PATH}",
             connect_args={"check_same_thread": False},
@@ -57,28 +62,14 @@ def load_from_sqlite(
 ) -> pd.DataFrame:
     """
     Load rows from a SQLite table into a DataFrame.
-
-    Parameters
-    ----------
-    table : str
-        Table name to query (e.g. ``"stg_transaction"``).
-    columns : list[str] | None
-        Columns to SELECT. Defaults to ``*``.
-    where : str | None
-        Optional SQL WHERE clause (without the ``WHERE`` keyword).
-        Example: ``"type = 'Expense'"``
-    limit : int | None
-        Optional LIMIT clause.
-    ensure_downloaded : bool
-        If True (default), call ``download_db()`` to pull the DB from GCS
-        when it is not already present locally.
-
-    Returns
-    -------
-    pd.DataFrame
     """
     if ensure_downloaded:
-        download_db()  # no-op if already present
+        download_db()  # Returns bool, but we check file existence via _get_engine
+
+    engine = _get_engine()
+    if engine is None:
+        # DB doesn't exist locally — return empty DF with schema to avoid crashes
+        return pd.DataFrame(columns=_SCHEMA_FALLBACK)
 
     col_clause = ", ".join(columns) if columns else "*"
     sql = f"SELECT {col_clause} FROM {table}"
@@ -87,8 +78,12 @@ def load_from_sqlite(
     if limit is not None:
         sql += f" LIMIT {limit}"
 
-    with _get_engine().connect() as conn:
-        df = pd.read_sql(sqlalchemy.text(sql), conn)
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(sqlalchemy.text(sql), conn)
+    except Exception as e:
+        print(f"[sqlite_loader] ❌  Failed to query table '{table}': {e}")
+        return pd.DataFrame(columns=_SCHEMA_FALLBACK)
 
     return df
 
