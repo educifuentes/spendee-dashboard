@@ -2,6 +2,16 @@
 
 A Streamlit BI dashboard for visualizing personal expenses from a Google Cloud SQL PostgreSQL database.
 
+# Deploy
+
+To deploy the application to Google Cloud Run, ensure you have the `gcloud` CLI installed and authenticated, then run the deployment script:
+
+```bash
+
+
+./scripts/release.sh
+```
+
 ## Setup
 
 1. Install dependencies:
@@ -32,14 +42,4 @@ python scripts/load_transactions_cloud_sql.py
 
 ```bash
 streamlit run app.py
-```
-
-# Deploy
-
-To deploy the application to Google Cloud Run, ensure you have the `gcloud` CLI installed and authenticated, then run the deployment script:
-
-```bash
-
-
-./scripts/release.sh
 ```
