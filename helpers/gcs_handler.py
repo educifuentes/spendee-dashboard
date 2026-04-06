@@ -123,10 +123,20 @@ def upload_db() -> None:
     with open(LOCAL_DB_PATH, "rb") as fh:
         data = fh.read()
 
-    resp = _requests.post(
-        upload_url,
-        data=data,
-        headers={"Content-Type": "application/octet-stream"},
-    )
-    resp.raise_for_status()
-    print("[gcs_handler] Upload complete.")
+    try:
+        resp = _requests.post(
+            upload_url,
+            data=data,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        
+        if resp.status_code == 404:
+            print(f"[gcs_handler] ❌  Upload failed with 404 Not Found.")
+            print(f"               This usually means the bucket '{bucket}' does not exist.")
+            print(f"               Please verify BUCKET_NAME in .streamlit/secrets.toml matches your GCP project.")
+            
+        resp.raise_for_status()
+        print("[gcs_handler] Upload complete.")
+    except Exception as e:
+        print(f"[gcs_handler] ❌  Error uploading database: {e}")
+        raise e

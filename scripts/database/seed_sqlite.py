@@ -67,13 +67,8 @@ def migrate():
     # 2. Write to SQLite
     print(f"\n[2/3] Writing to SQLite at {LOCAL_DB_PATH} ...")
     if os.path.exists(LOCAL_DB_PATH):
-        if sys.stdin.isatty():
-            answer = input(f"      ⚠️  File already exists. Overwrite? [y/N] ").strip().lower()
-            if answer != "y":
-                print("      Aborted.")
-                return
-        else:
-            print("      ⚠️  File already exists. Non-interactive mode: Overwriting automatically.")
+        print(f"      ⚠️  Existing database found. Deleting for a fresh start to ensure all tables are overwritten.")
+        os.remove(LOCAL_DB_PATH)
 
     engine = get_sqlite_engine()
     with engine.begin() as conn:
