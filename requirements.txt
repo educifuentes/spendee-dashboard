@@ -8,3 +8,4 @@ pyyaml
 sqlalchemy
 google-cloud-storage
 requests
+st-gsheets-connection

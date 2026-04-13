@@ -1,0 +1,9 @@
+sources:
+  - name: Ingresos Proyectados
+    description: Track of use of my time.
+    kind: Google Sheets
+    tables:
+      - name: ingresos_proyectados
+        description: Ingresos proyectados del ano.
+        url: https://docs.google.com/spreadsheets/d/11JgW2Z9cFrHvNFw21-zlvylTHHo5tvizJeA9oxHcDHU/
+        worksheet: ingresos_proyectados
