@@ -1,6 +1,6 @@
 import streamlit as st
 
-from helpers.get_version import get_app_version
+from helpers.app_version import get_git_version
 
 # ==========================================
 # Page Configuration
@@ -15,13 +15,13 @@ st.set_page_config(
 # Section - Reports
 overview_page = st.Page("pages/1_views/1_overview.py", title="Overview", icon=":material/dashboard:")
 trends_page = st.Page("pages/1_views/2_trends.py", title="Trends", icon=":material/trending_up:")
-income_page = st.Page("pages/1_views/3_income.py", title="Income", icon=":material/inventory_2:")
-transactions_page = st.Page("pages/1_views/4_transactions.py", title="Transactions", icon=":material/inventory_2:")
+income_page = st.Page("pages/1_views/3_income.py", title="Ingresos", icon=":material/inventory_2:")
+transactions_page = st.Page("pages/1_views/4_transactions.py", title="Transacciones", icon=":material/inventory_2:")
 
 
 # Section - Tools
-explore_page = st.Page("pages/2_tools/1_data_explorer.py", title="Data Explorer", icon=":material/search:")
-validations_page = st.Page("pages/2_tools/2_validations.py", title="Validations", icon=":material/warning:")
+explore_page = st.Page("pages/2_tools/1_data_explorer.py", title="Explorar Datos", icon=":material/search:")
+validations_page = st.Page("pages/2_tools/2_validations.py", title="Validaciones", icon=":material/warning:")
 uploads_page = st.Page("pages/2_tools/3_data_uploads.py", title="Data Uploads", icon=":material/upload_file:")
 search_page = st.Page("pages/2_tools/4_search.py", title="Search", icon=":material/search:")
 
@@ -40,7 +40,13 @@ pg = st.navigation({
     "Dev": [staging_page, intermediate_page, marts_page, exposures_page, catalog_page, model_details_page]
 })
 
+# Sidebar - Utilities
 with st.sidebar:
-    st.caption(f"Version: {get_app_version()}")
+    st.divider()
+    if st.button("Refresh Gsheet Data", icon=":material/refresh:", type="primary", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+    app_version = get_git_version()
+    st.caption(f"App Version: {app_version}")
 
 pg.run()
