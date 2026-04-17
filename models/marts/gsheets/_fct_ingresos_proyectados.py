@@ -6,5 +6,16 @@ def fct_ingresos_proyectados():
     Currently acts as a pass-through from the intermediate model.
     """
     df = int_gsheets__ingresos_proyectados()
+
+    selected_columns = [
+                "date",
+                "area",
+                "name",
+                "cliente",
+                "monto",
+                "status",
+                "nota"]
+
+    df = df[selected_columns]
     
     return df

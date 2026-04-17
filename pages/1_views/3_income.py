@@ -91,8 +91,7 @@ st_dataframe_helper(
 st.divider()
 
 # --- Ingresos Section ---
-st.header("Ingresos")
-st.subheader("Transaction Details")
+st.subheader("Spendee Income")
 
 st_dataframe_helper(
     income_df,
