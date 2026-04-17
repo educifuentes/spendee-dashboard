@@ -15,6 +15,8 @@ st.title(":material/inventory_2: Income Report")
 # --- Ingresos Proyectados Section ---
 st.subheader("Ingresos Proyectados")
 
+st.markdown("[Ir a Gsheets](https://docs.google.com/spreadsheets/d/1R6KyFinqSIIXxHEb0vr4-DXy8XsPpXEgBR9HGZ51mms/edit?gid=1953366319#gid=1953366319)")
+
 # Calculate metrics from "monto" based on "status"
 sum_done = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'done', 'monto'].sum()
 sum_pending = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'pending', 'monto'].sum()
@@ -26,11 +28,49 @@ with col2:
     st.metric("Total Pending", f"${sum_pending:,.0f}")
 
 # Display dataframe of ingresos_proyectados
+def append_subtotal(df):
+    df = df.copy()
+    if df.empty:
+        return df
+    subtotal = pd.Series(index=df.columns, dtype='object')
+    if 'status' in df.columns:
+        subtotal['status'] = 'SUBTOTAL'
+    for col in ["monto", "monto bruto", "deposito"]:
+        if col in df.columns:
+            subtotal[col] = df[col].sum()
+    return pd.concat([df, pd.DataFrame([subtotal])], ignore_index=True)
+
+def format_currency_cols(df):
+    df_fmt = df.copy()
+    for col in ["monto", "monto bruto", "deposito"]:
+        if col in df_fmt.columns:
+            df_fmt[col] = pd.to_numeric(df_fmt[col], errors='coerce')
+            df_fmt[col] = df_fmt[col].apply(lambda x: f"${x:,.0f}" if pd.notnull(x) else "")
+    return df_fmt
+
+st.markdown("##### Done")
+df_done = df_ingresos_proy[df_ingresos_proy['status'].str.lower().str.strip() == 'done'].copy()
+df_done = df_done.sort_values("date", ascending=False) if "date" in df_done.columns else df_done
+df_done = append_subtotal(df_done)
+
 st_dataframe_helper(
-    df_ingresos_proy.sort_values("date", ascending=False) if "date" in df_ingresos_proy.columns else df_ingresos_proy,
-    selected_columns=df_ingresos_proy.columns.tolist(),
-    date_columns=["date"] if "date" in df_ingresos_proy.columns else [],
-    currency_columns=["monto", "monto bruto", "deposito"],
+    format_currency_cols(df_done),
+    selected_columns=df_done.columns.tolist(),
+    date_columns=["date"] if "date" in df_done.columns else [],
+    currency_columns=[], # Removed since we formatted them as strings
+    multiselect_columns=["status", "area", "cliente"]
+)
+
+st.markdown("##### Pending")
+df_pending = df_ingresos_proy[df_ingresos_proy['status'].str.lower().str.strip() != 'done'].copy()
+df_pending = df_pending.sort_values("date", ascending=False) if "date" in df_pending.columns else df_pending
+df_pending = append_subtotal(df_pending)
+
+st_dataframe_helper(
+    format_currency_cols(df_pending),
+    selected_columns=df_pending.columns.tolist(),
+    date_columns=["date"] if "date" in df_pending.columns else [],
+    currency_columns=[], # Removed since we formatted them as strings
     multiselect_columns=["status", "area", "cliente"]
 )
 
