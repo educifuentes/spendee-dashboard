@@ -21,11 +21,23 @@ st.markdown("[Ir a Gsheets](https://docs.google.com/spreadsheets/d/1R6KyFinqSIIX
 sum_done = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'done', 'monto'].sum()
 sum_pending = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'pending', 'monto'].sum()
 
-col1, col2 = st.columns(2)
+total_monto = df_ingresos_proy['monto'].sum()
+distinct_months = 1
+if 'date' in df_ingresos_proy.columns:
+    dates_converted = pd.to_datetime(df_ingresos_proy['date'], errors='coerce')
+    months_count = dates_converted.dropna().dt.to_period('M').nunique()
+    if months_count > 0:
+        distinct_months = months_count
+
+avg_monto_per_month = total_monto / distinct_months
+
+col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Total Done", f"${sum_done:,.0f}")
 with col2:
     st.metric("Total Pending", f"${sum_pending:,.0f}")
+with col3:
+    st.metric("Avg / Month", f"${avg_monto_per_month:,.0f}")
 
 # Display dataframe of ingresos_proyectados
 def append_subtotal(df):
