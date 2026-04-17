@@ -31,12 +31,14 @@ if 'date' in df_ingresos_proy.columns:
 
 avg_monto_per_month = total_monto / distinct_months
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("Total Done", f"${sum_done:,.0f}")
+    st.metric("Total", f"${total_monto:,.0f}")
 with col2:
-    st.metric("Total Pending", f"${sum_pending:,.0f}")
+    st.metric("Total Done", f"${sum_done:,.0f}")
 with col3:
+    st.metric("Total Pending", f"${sum_pending:,.0f}")
+with col4:
     st.metric("Avg / Month", f"${avg_monto_per_month:,.0f}")
 
 # Display dataframe of ingresos_proyectados
