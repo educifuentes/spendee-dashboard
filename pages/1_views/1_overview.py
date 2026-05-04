@@ -28,7 +28,7 @@ from helpers.data_transformations.periods import (
 fct_transactions_df = exp_transactions()
 
 # 2. Header & Metrics
-st.title(":material/paid: Spendee Expense Dashboard")
+st.title(":material/paid: Spendee Expenses")
 st.caption(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
 
 
@@ -78,7 +78,9 @@ with c1:
 with c2:
     selected_label = st.selectbox(granularity, period_options, index=default_index, key="selected_period_label")
 with c3:
-    selected_wallets = st.multiselect("Wallets", get_wallet_options(fct_transactions_df, include_all=False))
+    wallet_options = get_wallet_options(fct_transactions_df, include_all=False)
+    default_wallet = [w for w in wallet_options if "Main CLP" in w]
+    selected_wallets = st.multiselect("Wallets", wallet_options, default=default_wallet)
 
 start_date, end_date = get_period_dates(granularity, period_values[selected_label])
 
