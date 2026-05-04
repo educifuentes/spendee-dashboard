@@ -3,6 +3,7 @@ import pandas as pd
 
 from models.exposures.spendee._exp_transactions import exp_transactions
 from models.metrics.spendee._metric_expenses import metric_expenses
+from helpers.constants.category_colors import CATEGORY_COLORS
 
 from helpers.charts import (
     bar_chart_by_category,
@@ -32,38 +33,38 @@ st.title(":material/paid: Spendee Expenses")
 st.caption(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
 
 
-st.subheader("Current Month Summary")
-m1, m2, m3, m4 = st.columns(4)
+# st.subheader("Current Month Summary")
+# m1, m2, m3, m4 = st.columns(4)
 
-# MTD Comparison for primary metric
-curr_mtd, last_mtd, pct_change = metric_expenses(fct_transactions_df)
-# Keep other monthly totals for context
-curr_exp = get_current_month_expenses(fct_transactions_df)
-last_exp = get_last_month_expenses(fct_transactions_df)
+# # MTD Comparison for primary metric
+# curr_mtd, last_mtd, pct_change = metric_expenses(fct_transactions_df)
+# # Keep other monthly totals for context
+# curr_exp = get_current_month_expenses(fct_transactions_df)
+# last_exp = get_last_month_expenses(fct_transactions_df)
 
-m1.metric(
-    "MTD Expenses vs Last Month", 
-    f"${curr_mtd:,.0f}", 
-    delta=f"{pct_change:+.1f}%",
-    help=f"Compared to ${last_mtd:,.0f} spent by this day last month."
-)
-m2.metric("Gastos Mes Actual", f"${curr_exp:,.0f}")
-m3.metric(
-    "Ingreso Mes Actual", 
-    f"${get_current_month_income(fct_transactions_df):,.0f}",
-    delta=f"${get_current_month_income(fct_transactions_df, wallet='Pasivos'):,.0f} Pasivos",
-    delta_color="off",
-    delta_arrow="off"
-)
-m4.metric(
-    "Ingreso Mes Pasado", 
-    f"${get_last_month_income(fct_transactions_df):,.0f}",
-    delta=f"${get_last_month_income(fct_transactions_df, wallet='Pasivos'):,.0f} Pasivos",
-    delta_color="off",
-    delta_arrow="off"
-)
+# m1.metric(
+#     "MTD Expenses vs Last Month", 
+#     f"${curr_mtd:,.0f}", 
+#     delta=f"{pct_change:+.1f}%",
+#     help=f"Compared to ${last_mtd:,.0f} spent by this day last month."
+# )
+# m2.metric("Gastos Mes Actual", f"${curr_exp:,.0f}")
+# m3.metric(
+#     "Ingreso Mes Actual", 
+#     f"${get_current_month_income(fct_transactions_df):,.0f}",
+#     delta=f"${get_current_month_income(fct_transactions_df, wallet='Pasivos'):,.0f} Pasivos",
+#     delta_color="off",
+#     delta_arrow="off"
+# )
+# m4.metric(
+#     "Ingreso Mes Pasado", 
+#     f"${get_last_month_income(fct_transactions_df):,.0f}",
+#     delta=f"${get_last_month_income(fct_transactions_df, wallet='Pasivos'):,.0f} Pasivos",
+#     delta_color="off",
+#     delta_arrow="off"
+# )
 
-st.divider()
+# st.divider()
 
 # 3. Filters & Period Selection
 granularity, selected_label, period_options, period_values, default_index = setup_period_selection(
@@ -119,19 +120,72 @@ st.subheader("By Budget")
 st.altair_chart(bar_chart_by_budget(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 
 st.divider()
-# 5. Tables
-col_a, col_b = st.columns(2)
-with col_a:
-    st.subheader("Expenses by Category")
-    st.table(get_transactions_by_category_sorted(get_filtered_data(fct_transactions_df, "Expense")))
-    st.subheader("Expenses by Label")
-    st.table(get_transactions_by_labels_sorted(get_filtered_data(fct_transactions_df, "Expense")))
+# 5. Transactions
+st.subheader("Transactions")
 
-with col_b:
-    st.subheader("Income by Category")
-    st.table(get_transactions_by_category_sorted(get_filtered_data(fct_transactions_df, "Income")))
-    st.subheader("Income by Label")
-    st.table(get_transactions_by_labels_sorted(get_filtered_data(fct_transactions_df, "Income")))
+tab_exp, tab_inc = st.tabs(["Expenses", "Income"])
+
+with tab_exp:
+    exp_data = get_filtered_data(fct_transactions_df, "Expense")
+    
+    col_cat_e, col_lbl_e = st.columns(2)
+    with col_cat_e:
+        exp_categories = sorted(exp_data["category"].dropna().unique())
+        sel_cat_e = st.multiselect("Filter by Category", exp_categories, key="cat_exp")
+    
+    with col_lbl_e:
+        exp_labels = sorted(exp_data["labels"].dropna().astype(str).unique())
+        sel_lbl_e = st.multiselect("Filter by Label", exp_labels, key="lbl_exp")
+    
+    filt_exp = exp_data.copy()
+    if sel_cat_e:
+        filt_exp = filt_exp[filt_exp["category"].isin(sel_cat_e)]
+    if sel_lbl_e:
+        filt_exp = filt_exp[filt_exp["labels"].astype(str).isin(sel_lbl_e)]
+    
+    st.dataframe(
+        filt_exp[["note", "category", "labels", "amount", "date"]].sort_values(by="date", ascending=False),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
+            "category": st.column_config.MultiselectColumn("Category", options=exp_categories, color=[CATEGORY_COLORS.get(c, "auto") for c in exp_categories]),
+            "labels": st.column_config.MultiselectColumn("Labels", options=exp_labels),
+            "amount": st.column_config.NumberColumn("Amount", format="$%d")
+        }
+    )
+    st.write(f"**Subtotal:** ${filt_exp['amount'].sum():,.0f}")
+
+with tab_inc:
+    inc_data = get_filtered_data(fct_transactions_df, "Income")
+    
+    col_cat_i, col_lbl_i = st.columns(2)
+    with col_cat_i:
+        inc_categories = sorted(inc_data["category"].dropna().unique())
+        sel_cat_i = st.multiselect("Filter by Category", inc_categories, key="cat_inc")
+    
+    with col_lbl_i:
+        inc_labels = sorted(inc_data["labels"].dropna().astype(str).unique())
+        sel_lbl_i = st.multiselect("Filter by Label", inc_labels, key="lbl_inc")
+    
+    filt_inc = inc_data.copy()
+    if sel_cat_i:
+        filt_inc = filt_inc[filt_inc["category"].isin(sel_cat_i)]
+    if sel_lbl_i:
+        filt_inc = filt_inc[filt_inc["labels"].astype(str).isin(sel_lbl_i)]
+    
+    st.dataframe(
+        filt_inc[["note", "category", "labels", "amount", "date"]].sort_values(by="date", ascending=False),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
+            "category": st.column_config.MultiselectColumn("Category", options=inc_categories, color=[CATEGORY_COLORS.get(c, "auto") for c in inc_categories]),
+            "labels": st.column_config.MultiselectColumn("Labels", options=inc_labels),
+            "amount": st.column_config.NumberColumn("Amount", format="$%d")
+        }
+    )
+    st.write(f"**Subtotal:** ${filt_inc['amount'].sum():,.0f}")
 
 
 
