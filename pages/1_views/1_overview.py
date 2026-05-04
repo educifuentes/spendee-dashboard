@@ -29,8 +29,10 @@ fct_transactions_df = exp_transactions()
 
 # 2. Header & Metrics
 st.title(":material/paid: Spendee Expense Dashboard")
-st.info(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
+st.caption(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
 
+
+st.subheader("Current Month Summary")
 m1, m2, m3, m4 = st.columns(4)
 
 # MTD Comparison for primary metric
@@ -88,6 +90,17 @@ def get_filtered_data(df, type_filter=None):
     if type_filter:
         data = data[data["type"] == type_filter]
     return data
+
+st.markdown(f"### {end_date.strftime('%B %Y')}")
+
+sel_income = get_filtered_data(fct_transactions_df, "Income")["amount"].sum()
+sel_expense = get_filtered_data(fct_transactions_df, "Expense")["amount"].sum()
+
+sc1, sc2, sc3 = st.columns(3)
+sc1.metric("Selected Period Income", f"${sel_income:,.0f}")
+sc2.metric("Selected Period Expenses", f"${sel_expense:,.0f}")
+sc3.metric("Net", f"${sel_income - sel_expense:,.0f}")
+
 
 # 4. Visualizations
 st.subheader("By Category")
