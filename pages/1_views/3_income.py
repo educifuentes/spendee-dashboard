@@ -18,26 +18,51 @@ st.subheader("Ingresos Proyectados")
 st.markdown("[Ir a Gsheets](https://docs.google.com/spreadsheets/d/1R6KyFinqSIIXxHEb0vr4-DXy8XsPpXEgBR9HGZ51mms/edit?gid=1953366319#gid=1953366319)")
 
 # Calculate metrics from "monto" based on "status"
-sum_done = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'done', 'monto'].sum()
-sum_pending = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'pending', 'monto'].sum()
+sum_done_total = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() == 'done', 'monto'].sum()
+sum_pending_total = df_ingresos_proy.loc[df_ingresos_proy['status'].str.lower().str.strip() != 'done', 'monto'].sum()
+total_monto_total = df_ingresos_proy['monto'].sum()
 
-total_monto = df_ingresos_proy['monto'].sum()
+# Current Month Metrics
+current_month = pd.Timestamp.now().to_period('M')
+if 'date' in df_ingresos_proy.columns:
+    df_ingresos_proy['date_dt'] = pd.to_datetime(df_ingresos_proy['date'], errors='coerce')
+    df_current = df_ingresos_proy[df_ingresos_proy['date_dt'].dt.to_period('M') == current_month]
+    
+    sum_done_month = df_current.loc[df_current['status'].str.lower().str.strip() == 'done', 'monto'].sum()
+    sum_pending_month = df_current.loc[df_current['status'].str.lower().str.strip() != 'done', 'monto'].sum()
+    total_monto_month = df_current['monto'].sum()
+else:
+    sum_done_month = 0
+    sum_pending_month = 0
+    total_monto_month = 0
+
 distinct_months = 1
 if 'date' in df_ingresos_proy.columns:
-    dates_converted = pd.to_datetime(df_ingresos_proy['date'], errors='coerce')
-    months_count = dates_converted.dropna().dt.to_period('M').nunique()
+    months_count = df_ingresos_proy['date_dt'].dropna().dt.to_period('M').nunique()
     if months_count > 0:
         distinct_months = months_count
 
-avg_monto_per_month = total_monto / distinct_months
+avg_monto_per_month = total_monto_total / distinct_months
+
+st.subheader(f"Current Month ({current_month})")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Month Done", f"${sum_done_month:,.0f}")
+with col2:
+    st.metric("Month Pending", f"${sum_pending_month:,.0f}")
+with col3:
+    st.metric("Month Total", f"${total_monto_month:,.0f}")
+
+st.subheader("Overall Stats")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("Total", f"${total_monto:,.0f}")
+    st.metric("Total", f"${total_monto_total:,.0f}")
 with col2:
-    st.metric("Total Done", f"${sum_done:,.0f}")
+    st.metric("Total Done", f"${sum_done_total:,.0f}")
 with col3:
-    st.metric("Total Pending", f"${sum_pending:,.0f}")
+    st.metric("Total Pending", f"${sum_pending_total:,.0f}")
 with col4:
     st.metric("Avg / Month", f"${avg_monto_per_month:,.0f}")
 
