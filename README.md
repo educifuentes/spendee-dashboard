@@ -1,6 +1,6 @@
 # Spendee Expense Dashboard
 
-A Streamlit BI dashboard for visualizing personal expenses from a Google Cloud SQL PostgreSQL database.
+A Streamlit BI dashboard for visualizing personal expenses, using a SQLite database synced to a Google Cloud Storage (GCS) bucket.
 
 # Deploy
 
@@ -18,23 +18,21 @@ To deploy the application to Google Cloud Run, ensure you have the `gcloud` CLI 
 pip install -r requirements.txt
 ```
 
-2. Configure database credentials in `.streamlit/secrets.toml`:
+2. Configure storage credentials in `.streamlit/secrets.toml`:
 
 ```toml
-[gcp_cloud_sql]
-INSTANCE_CONNECTION_NAME = "project:region:instance"
-DB_USER = "postgres"
-DB_PASS = "your-password"
-DB_NAME = "postgres"
-TABLE_NAME = "transactions"
-CSV_FILE = "seeds/uploads/fct_transactions.csv"
+[gcp_gcs]
+BUCKET_NAME = "your-bucket-name"
+DB_PATH = "expenses.sqlite"
 ```
 
-3. Initialize the database (optional - loads data from CSV to Cloud SQL):
+3. Initialize the database (optional - loads data from CSV to a local SQLite file, then uploads to GCS):
 
 ```bash
-python scripts/load_transactions_cloud_sql.py
+python scripts/database/seed_sqlite.py
 ```
+
+_(Note: This replaces the legacy `scripts/database/load_all_stg_transactions.py` which was used for Cloud SQL)._
 
 4. Launch the Streamlit app:
 
