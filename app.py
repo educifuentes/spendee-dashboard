@@ -35,7 +35,7 @@ model_details_page = st.Page("pages/3_dev/model_details.py", title="Model Detail
 
 # current page
 pg = st.navigation({
-    "Reports": [overview_page, trends_page, income_page, transactions_page],
+    "Reports": [overview_page, trends_page, income_page],
     "Tools": [explore_page, validations_page, search_page, uploads_page],
     "Dev": [staging_page, intermediate_page, marts_page, exposures_page, catalog_page, model_details_page]
 })
