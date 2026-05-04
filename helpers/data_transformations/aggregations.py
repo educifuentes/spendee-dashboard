@@ -10,15 +10,18 @@ def get_current_month_expenses(df):
     current_month = filter_by_date_range(df, start, end)
     return current_month[current_month["type"] == "Expense"]["amount"].sum()
 
-def get_current_month_income(df):
+def get_current_month_income(df, wallet=None):
     """Get total income for current month."""
     now = datetime.now()
     start = datetime(now.year, now.month, 1)
     end = now
     current_month = filter_by_date_range(df, start, end)
-    return current_month[current_month["type"] == "Income"]["amount"].sum()
+    income_df = current_month[current_month["type"] == "Income"]
+    if wallet:
+        income_df = income_df[income_df["wallet"].str.contains(wallet, case=False, na=False)]
+    return income_df["amount"].sum()
 
-def get_last_month_income(df):
+def get_last_month_income(df, wallet=None):
     """Get total income for last month."""
     now = datetime.now()
     if now.month == 1:
@@ -29,7 +32,10 @@ def get_last_month_income(df):
         last_month_end = datetime(now.year, now.month, 1) - timedelta(seconds=1)
     
     last_month = filter_by_date_range(df, last_month_start, last_month_end)
-    return last_month[last_month["type"] == "Income"]["amount"].sum()
+    income_df = last_month[last_month["type"] == "Income"]
+    if wallet:
+        income_df = income_df[income_df["wallet"].str.contains(wallet, case=False, na=False)]
+    return income_df["amount"].sum()
 
 def get_last_month_expenses(df):
     """Get total expenses for last month."""

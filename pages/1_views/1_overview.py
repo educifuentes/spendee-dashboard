@@ -35,6 +35,9 @@ m1, m2, m3, m4 = st.columns(4)
 
 # MTD Comparison for primary metric
 curr_mtd, last_mtd, pct_change = metric_expenses(fct_transactions_df)
+# Keep other monthly totals for context
+curr_exp = get_current_month_expenses(fct_transactions_df)
+last_exp = get_last_month_expenses(fct_transactions_df)
 
 m1.metric(
     "MTD Expenses vs Last Month", 
@@ -42,13 +45,21 @@ m1.metric(
     delta=f"{pct_change:+.1f}%",
     help=f"Compared to ${last_mtd:,.0f} spent by this day last month."
 )
-
-# Keep other monthly totals for context
-curr_exp = get_current_month_expenses(fct_transactions_df)
-last_exp = get_last_month_expenses(fct_transactions_df)
-m2.metric("Current Month Expenses", f"${curr_exp:,.0f}")
-m3.metric("Current Month Income", f"${get_current_month_income(fct_transactions_df):,.0f}")
-m4.metric("Last Month Income", f"${get_last_month_income(fct_transactions_df):,.0f}")
+m2.metric("Gastos Mes Actual", f"${curr_exp:,.0f}")
+m3.metric(
+    "Ingreso Mes Actual", 
+    f"${get_current_month_income(fct_transactions_df):,.0f}",
+    delta=f"${get_current_month_income(fct_transactions_df, wallet='Pasivos'):,.0f} Pasivos",
+    delta_color="off",
+    delta_arrow="off"
+)
+m4.metric(
+    "Ingreso Mes Pasado", 
+    f"${get_last_month_income(fct_transactions_df):,.0f}",
+    delta=f"${get_last_month_income(fct_transactions_df, wallet='Pasivos'):,.0f} Pasivos",
+    delta_color="off",
+    delta_arrow="off"
+)
 
 st.divider()
 
