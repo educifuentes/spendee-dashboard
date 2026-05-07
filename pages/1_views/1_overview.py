@@ -3,7 +3,8 @@ import pandas as pd
 
 from models.exposures.spendee._exp_transactions import exp_transactions
 from models.metrics.spendee._metric_expenses import metric_expenses
-from helpers.constants.category_colors import CATEGORY_COLORS
+from helpers.constants.category_colors import CATEGORY_COLORS, EXPENSES_CATEGORY_COLORS, INCOME_CATEGORY_COLORS
+from helpers.ui_components.category_grid import render_category_grid
 
 from helpers.charts import (
     bar_chart_by_category,
@@ -118,6 +119,10 @@ st.divider()
 
 st.subheader("By Budget")
 st.altair_chart(bar_chart_by_budget(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
+
+st.divider()
+
+render_category_grid(EXPENSES_CATEGORY_COLORS, INCOME_CATEGORY_COLORS)
 
 st.divider()
 # 5. Transactions
