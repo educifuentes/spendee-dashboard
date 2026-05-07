@@ -5,7 +5,6 @@ def render_category_grid(expenses_colors, income_colors):
     Renders a grid of category badges based on the provided colors dictionaries,
     separated into Expenses and Income tabs.
     """
-    st.subheader("Categories")
     t_exp, t_inc = st.tabs(["Expenses", "Income"])
     
     def _draw_grid(colors_dict):

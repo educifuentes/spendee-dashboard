@@ -253,9 +253,16 @@ def bar_chart_by_budget(df):
     missing_budgets = sorted([b for b in all_budgets if b not in SORT_ORDER])
     final_order = ordered_budgets + missing_budgets
     
-    # Load budget colors
-    budget_colors = load_budget_colors()
-    range_colors = [budget_colors.get(budget, "#808080") for budget in final_order]
+    from helpers.constants.category_colors import CATEGORY_COLORS
+    
+    # Get unique categories for color scale
+    unique_categories = df["category"].dropna().unique().tolist()
+    cat_range_colors = [CATEGORY_COLORS.get(cat, "#808080") for cat in unique_categories]
+    
+    # Determine tick values with steps of 50,000
+    max_amount = df.groupby('budget')['amount_universal_clp'].sum().max() if not df.empty else 0
+    max_amount = 0 if pd.isna(max_amount) else int(max_amount)
+    tick_values = list(range(0, max_amount + 50000, 50000))
     
     # Base chart
     base = alt.Chart(df).encode(
@@ -267,13 +274,13 @@ def bar_chart_by_budget(df):
         stroke="slategray",
         strokeWidth=0.5
     ).encode(
-        x=alt.X("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f")),
+        x=alt.X("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f", values=tick_values)),
         color=alt.Color(
-            "budget:N",
-            scale=alt.Scale(domain=final_order, range=range_colors),
+            "category:N",
+            scale=alt.Scale(domain=unique_categories, range=cat_range_colors),
             legend=None
         ),
-        tooltip=["budget", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels", alt.Tooltip("date:T", format="%Y-%m-%d", title="Date")]
+        tooltip=["budget", "category", alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"), "note", "labels", alt.Tooltip("date:T", format="%Y-%m-%d", title="Date")]
     )
     
     # Text layer
