@@ -9,6 +9,7 @@ from helpers.ui_components.category_grid import render_category_grid
 from helpers.charts import (
     bar_chart_by_category,
     bar_chart_by_budget,
+    budget_subtotals_table,
     render_transactions_tabbed_chart
 )
 from helpers.misc import setup_period_selection, get_wallet_options
@@ -120,6 +121,8 @@ st.divider()
 st.subheader("By Budget")
 st.altair_chart(bar_chart_by_budget(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 
+# budget total table
+budget_subtotals_table(get_filtered_data(fct_transactions_df, "Expense"))
 st.divider()
 
 render_category_grid(EXPENSES_CATEGORY_COLORS, INCOME_CATEGORY_COLORS)

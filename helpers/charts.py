@@ -301,6 +301,39 @@ def bar_chart_by_budget(df):
     )
 
 
+def budget_subtotals_table(df):
+    """
+    Renders a Streamlit table with subtotals by budget and a grand total.
+    """
+    if df.empty:
+        st.caption("No data available.")
+        return
+
+    # Calculate subtotals
+    subtotals = df.groupby("budget", as_index=False)["amount_universal_clp"].sum()
+    
+    # Sort according to SORT_ORDER
+    subtotals["sort_key"] = subtotals["budget"].map(lambda x: SORT_ORDER.get(x, 999))
+    subtotals = subtotals.sort_values("sort_key").drop(columns=["sort_key"])
+    
+    # Calculate grand total
+    grand_total = subtotals["amount_universal_clp"].sum()
+    
+    # Add grand total row
+    total_row = pd.DataFrame([{"budget": "Grand Total", "amount_universal_clp": grand_total}])
+    final_df = pd.concat([subtotals, total_row], ignore_index=True)
+    
+    # Format the amount column
+    final_df["amount_universal_clp"] = final_df["amount_universal_clp"].apply(lambda x: f"${x:,.0f}")
+    
+    # Set index to Budget to hide the numerical index in the table
+    final_df = final_df.set_index("budget")
+    final_df.index.name = "Budget"
+    final_df = final_df.rename(columns={"amount_universal_clp": "Amount (CLP)"})
+    
+    st.table(final_df)
+
+
 def chart_top_expenses_by_label(df):
     """
     Create horizontal bar chart for top expenses by label.
