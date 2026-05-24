@@ -8,6 +8,7 @@ from helpers.ui_components.category_grid import render_category_grid
 
 from helpers.charts import (
     bar_chart_by_category,
+    bar_chart_by_label,
     bar_chart_by_budget,
     budget_subtotals_table,
     render_transactions_tabbed_chart
@@ -115,6 +116,9 @@ with t1:
     st.altair_chart(bar_chart_by_category(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 with t2:
     st.altair_chart(bar_chart_by_category(get_filtered_data(fct_transactions_df, "Income")), use_container_width=True)
+
+st.subheader("By Label")
+st.altair_chart(bar_chart_by_label(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 
 st.divider()
 

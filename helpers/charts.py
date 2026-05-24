@@ -13,27 +13,6 @@ from helpers.data_transformations.aggregations import get_categories_ranked_by_a
 # ==========================================
 # Configuration & Helpers
 # ==========================================
-def load_category_colors():
-    """Load category color mappings from SCSS file."""
-    colors_path = Path(__file__).parent / "constants" / "category_colors.scss"
-    colors = {}
-    
-    if not colors_path.exists():
-        return colors
-
-    with open(colors_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith("$") and ":" in line:
-                key, value = line.split(":", 1)
-                # Convert $variable-name to "Variable Name"
-                # e.g. $personal-care -> Personal Care
-                category = key.strip().lstrip("$").replace("-", " ").title()
-                color = value.strip().rstrip(";")
-                colors[category] = color
-    return colors
-
-
 def load_budget_colors():
     """Load budget color mappings from JSON file."""
     colors_path = Path(__file__).parent / "constants" / "budget_colors.json"
@@ -238,6 +217,74 @@ def bar_chart_by_category(df):
     )
 
 
+def bar_chart_by_label(df):
+    """
+    Create horizontal bar chart for expenses by label at the transaction level.
+    Labels column may contain comma-separated values; each label is counted individually.
+    Bars are segmented per transaction, colored by category.
+
+    Args:
+        df: DataFrame with 'labels', 'category', 'note', 'amount_universal_clp', 'date' columns
+    """
+    from helpers.constants.category_and_label_colors import CATEGORY_COLORS
+
+    df = df.copy()
+    df["labels"] = df["labels"].fillna("").astype(str)
+
+    # Explode comma-separated labels into individual rows
+    df["labels"] = df["labels"].str.split(",")
+    df = df.explode("labels")
+    df["labels"] = df["labels"].str.strip()
+    df = df[df["labels"] != ""]
+
+    if df.empty:
+        return alt.Chart(pd.DataFrame({"labels": [], "amount_universal_clp": []})).mark_bar()
+
+    items = get_categories_ranked_by_amount(df, column="labels")
+
+    unique_categories = df["category"].dropna().unique().tolist()
+    cat_range_colors = [CATEGORY_COLORS.get(cat, "#808080") for cat in unique_categories]
+
+    base = alt.Chart(df).encode(
+        y=alt.Y("labels:N", title="Label", sort=items)
+    )
+
+    bars = base.mark_bar(
+        stroke="slategray",
+        strokeWidth=0.5
+    ).encode(
+        x=alt.X("amount_universal_clp:Q", title="Amount (CLP)", axis=alt.Axis(format="$,.0f")),
+        color=alt.Color(
+            "category:N",
+            scale=alt.Scale(domain=unique_categories, range=cat_range_colors),
+            legend=None
+        ),
+        tooltip=[
+            "labels",
+            "category",
+            alt.Tooltip("amount_universal_clp:Q", format="$,.0f", title="Amount"),
+            "note",
+            alt.Tooltip("date:T", format="%Y-%m-%d", title="Date"),
+        ]
+    )
+
+    text = base.mark_text(
+        align='left',
+        baseline='middle',
+        dx=5,
+        fontWeight='bold',
+        color='white'
+    ).encode(
+        x=alt.X("sum(amount_universal_clp):Q", stack=None),
+        text=alt.Text("sum(amount_universal_clp):Q", format="$,.0f")
+    )
+
+    return (bars + text).properties(
+        width="container",
+        height=500,
+    )
+
+
 def bar_chart_by_budget(df):
     """
     Create horizontal bar chart for expenses by budget.
@@ -341,20 +388,19 @@ def chart_top_expenses_by_label(df):
     Args:
         df: DataFrame with 'label', 'amount', and 'category' columns
     """
+    from helpers.constants.category_and_label_colors import CATEGORY_COLORS
+
     df = df.copy()
-    
+
     # Format amount for text label
     df["amount_text"] = df["amount"].apply(lambda x: f"${x:,.0f}")
-    
-    # Load category colors
-    category_colors = load_category_colors()
-    
+
     # Get unique categories in the dataframe
     categories = df["category"].unique().tolist() if "category" in df.columns else []
-    
+
     # Create domain and range for color scale
     domain = categories
-    range_colors = [category_colors.get(cat, "#808080") for cat in categories]  # Default to gray if not found
+    range_colors = [CATEGORY_COLORS.get(cat, "#808080") for cat in categories]
     
     # Base chart with bars
     encode_dict = {
