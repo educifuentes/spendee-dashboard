@@ -253,7 +253,7 @@ def bar_chart_by_budget(df):
     missing_budgets = sorted([b for b in all_budgets if b not in SORT_ORDER])
     final_order = ordered_budgets + missing_budgets
     
-    from helpers.constants.category_colors import CATEGORY_COLORS
+    from helpers.constants.category_and_label_colors import CATEGORY_COLORS
     
     # Get unique categories for color scale
     unique_categories = df["category"].dropna().unique().tolist()
