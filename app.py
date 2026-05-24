@@ -1,6 +1,6 @@
 import streamlit as st
 
-from helpers.app_version import get_git_version
+from helpers.app_version import get_app_version
 
 # ==========================================
 # Page Configuration
@@ -47,7 +47,7 @@ with st.sidebar:
     if st.button("Refresh Gsheet Data", icon=":material/refresh:", type="primary", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    app_version = get_git_version()
+    app_version = get_app_version()
     st.caption(f"App Version: {app_version}")
 
 pg.run()
