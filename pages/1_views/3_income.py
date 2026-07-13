@@ -10,7 +10,7 @@ from helpers.misc import st_dataframe_helper
 df_ingresos_proy = fct_ingresos_proyectados()
 income_df = exp_income_by_month()
 
-st.title(":material/inventory_2: Income Report")
+st.title(":material/inventory_2: Reporte de Ingresos")
 
 # --- Ingresos Proyectados Section ---
 st.subheader("Ingresos Proyectados")
@@ -44,27 +44,27 @@ if 'date' in df_ingresos_proy.columns:
 
 avg_monto_per_month = total_monto_total / distinct_months
 
-st.subheader(f"Current Month ({current_month})")
+st.subheader(f"Mes Actual ({current_month})")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Month Done", f"${sum_done_month:,.0f}")
+    st.metric("Mes Realizado", f"${sum_done_month:,.0f}")
 with col2:
-    st.metric("Month Pending", f"${sum_pending_month:,.0f}")
+    st.metric("Mes Pendiente", f"${sum_pending_month:,.0f}")
 with col3:
-    st.metric("Month Total", f"${total_monto_month:,.0f}")
+    st.metric("Total del Mes", f"${total_monto_month:,.0f}")
 
-st.subheader("Overall Stats")
+st.subheader("Estadísticas Generales")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("Total", f"${total_monto_total:,.0f}")
 with col2:
-    st.metric("Total Done", f"${sum_done_total:,.0f}")
+    st.metric("Total Realizado", f"${sum_done_total:,.0f}")
 with col3:
-    st.metric("Total Pending", f"${sum_pending_total:,.0f}")
+    st.metric("Total Pendiente", f"${sum_pending_total:,.0f}")
 with col4:
-    st.metric("Avg / Month", f"${avg_monto_per_month:,.0f}")
+    st.metric("Promedio / Mes", f"${avg_monto_per_month:,.0f}")
 
 # Display dataframe of ingresos_proyectados
 def append_subtotal(df):
@@ -87,7 +87,7 @@ def format_currency_cols(df):
             df_fmt[col] = df_fmt[col].apply(lambda x: f"${x:,.0f}" if pd.notnull(x) else "")
     return df_fmt
 
-st.markdown("##### Done")
+st.markdown("##### Realizados")
 df_done = df_ingresos_proy[df_ingresos_proy['status'].str.lower().str.strip() == 'done'].copy()
 df_done = df_done.sort_values("date", ascending=False) if "date" in df_done.columns else df_done
 df_done = append_subtotal(df_done)
@@ -100,7 +100,7 @@ st_dataframe_helper(
     multiselect_columns=["status", "area", "cliente"]
 )
 
-st.markdown("##### Pending")
+st.markdown("##### Pendientes")
 df_pending = df_ingresos_proy[df_ingresos_proy['status'].str.lower().str.strip() != 'done'].copy()
 df_pending = df_pending.sort_values("date", ascending=False) if "date" in df_pending.columns else df_pending
 df_pending = append_subtotal(df_pending)
@@ -116,7 +116,7 @@ st_dataframe_helper(
 st.divider()
 
 # --- Ingresos Section ---
-st.subheader("Spendee Income")
+st.subheader("Ingresos Spendee")
 
 st_dataframe_helper(
     income_df,

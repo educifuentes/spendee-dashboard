@@ -32,8 +32,8 @@ from helpers.data_transformations.periods import (
 fct_transactions_df = exp_transactions()
 
 # 2. Header & Metrics
-st.title(":material/paid: Spendee Expenses")
-st.caption(f"Data range: {fct_transactions_df['date'].min().date()} to {fct_transactions_df['date'].max().date()}")
+st.title(":material/paid: Gastos Spendee")
+st.caption(f"Rango de datos: {fct_transactions_df['date'].min().date()} a {fct_transactions_df['date'].max().date()}")
 
 
 # st.subheader("Current Month Summary")
@@ -78,13 +78,13 @@ st.title(f"{selected_label}")
 
 c1, c2, c3 = st.columns(3)
 with c1:
-    granularity = st.selectbox("Period", ["Month", "Week", "Year"], index=0, key="granularity")
+    granularity = st.selectbox("Período", ["Month", "Week", "Year"], format_func=lambda x: {"Month": "Mes", "Week": "Semana", "Year": "Año"}[x], index=0, key="granularity")
 with c2:
     selected_label = st.selectbox(granularity, period_options, index=default_index, key="selected_period_label")
 with c3:
     wallet_options = get_wallet_options(fct_transactions_df, include_all=False)
     default_wallet = [w for w in wallet_options if "Main CLP" in w]
-    selected_wallets = st.multiselect("Wallets", wallet_options, default=default_wallet)
+    selected_wallets = st.multiselect("Billeteras", wallet_options, default=default_wallet)
 
 start_date, end_date = get_period_dates(granularity, period_values[selected_label])
 
@@ -103,26 +103,26 @@ sel_income = get_filtered_data(fct_transactions_df, "Income")["amount"].sum()
 sel_expense = get_filtered_data(fct_transactions_df, "Expense")["amount"].sum()
 
 sc1, sc2, sc3 = st.columns(3)
-sc1.metric("Selected Period Income", f"${sel_income:,.0f}")
-sc2.metric("Selected Period Expenses", f"${sel_expense:,.0f}")
-sc3.metric("Net", f"${sel_income - sel_expense:,.0f}")
+sc1.metric("Ingreso Período Seleccionado", f"${sel_income:,.0f}")
+sc2.metric("Gastos Período Seleccionado", f"${sel_expense:,.0f}")
+sc3.metric("Neto", f"${sel_income - sel_expense:,.0f}")
 
 
 # 4. Visualizations
-st.subheader("By Category")
-t1, t2 = st.tabs(["Expenses", "Income"])
+st.subheader("Por Categoría")
+t1, t2 = st.tabs(["Gastos", "Ingresos"])
 
 with t1:
     st.altair_chart(bar_chart_by_category(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 with t2:
     st.altair_chart(bar_chart_by_category(get_filtered_data(fct_transactions_df, "Income")), use_container_width=True)
 
-st.subheader("By Label")
+st.subheader("Por Etiqueta")
 st.altair_chart(bar_chart_by_label(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 
 st.divider()
 
-st.subheader("By Budget")
+st.subheader("Por Presupuesto")
 st.altair_chart(bar_chart_by_budget(get_filtered_data(fct_transactions_df, "Expense")), use_container_width=True)
 
 # budget total table
@@ -133,9 +133,9 @@ render_category_grid(EXPENSES_CATEGORY_COLORS, INCOME_CATEGORY_COLORS)
 
 st.divider()
 # 5. Transactions
-st.subheader("Transactions")
+st.subheader("Transacciones")
 
-tab_exp, tab_inc = st.tabs(["Expenses", "Income"])
+tab_exp, tab_inc = st.tabs(["Gastos", "Ingresos"])
 
 with tab_exp:
     exp_data = get_filtered_data(fct_transactions_df, "Expense")
@@ -143,11 +143,11 @@ with tab_exp:
     col_cat_e, col_lbl_e = st.columns(2)
     with col_cat_e:
         exp_categories = sorted(exp_data["category"].dropna().unique())
-        sel_cat_e = st.multiselect("Filter by Category", exp_categories, key="cat_exp")
+        sel_cat_e = st.multiselect("Filtrar por Categoría", exp_categories, key="cat_exp")
     
     with col_lbl_e:
         exp_labels = sorted(exp_data["labels"].dropna().astype(str).unique())
-        sel_lbl_e = st.multiselect("Filter by Label", exp_labels, key="lbl_exp")
+        sel_lbl_e = st.multiselect("Filtrar por Etiqueta", exp_labels, key="lbl_exp")
     
     filt_exp = exp_data.copy()
     if sel_cat_e:
@@ -160,10 +160,10 @@ with tab_exp:
         use_container_width=True,
         hide_index=True,
         column_config={
-            "date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
-            "category": st.column_config.MultiselectColumn("Category", options=exp_categories, color=[CATEGORY_COLORS.get(c, "auto") for c in exp_categories]),
-            "labels": st.column_config.MultiselectColumn("Labels", options=exp_labels),
-            "amount": st.column_config.NumberColumn("Amount", format="$%d")
+            "date": st.column_config.DateColumn("Fecha", format="YYYY-MM-DD"),
+            "category": st.column_config.MultiselectColumn("Categoría", options=exp_categories, color=[CATEGORY_COLORS.get(c, "auto") for c in exp_categories]),
+            "labels": st.column_config.MultiselectColumn("Etiquetas", options=exp_labels),
+            "amount": st.column_config.NumberColumn("Monto", format="$%d")
         }
     )
     st.write(f"**Subtotal:** ${filt_exp['amount'].sum():,.0f}")
@@ -174,11 +174,11 @@ with tab_inc:
     col_cat_i, col_lbl_i = st.columns(2)
     with col_cat_i:
         inc_categories = sorted(inc_data["category"].dropna().unique())
-        sel_cat_i = st.multiselect("Filter by Category", inc_categories, key="cat_inc")
+        sel_cat_i = st.multiselect("Filtrar por Categoría", inc_categories, key="cat_inc")
     
     with col_lbl_i:
         inc_labels = sorted(inc_data["labels"].dropna().astype(str).unique())
-        sel_lbl_i = st.multiselect("Filter by Label", inc_labels, key="lbl_inc")
+        sel_lbl_i = st.multiselect("Filtrar por Etiqueta", inc_labels, key="lbl_inc")
     
     filt_inc = inc_data.copy()
     if sel_cat_i:
@@ -191,10 +191,10 @@ with tab_inc:
         use_container_width=True,
         hide_index=True,
         column_config={
-            "date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
-            "category": st.column_config.MultiselectColumn("Category", options=inc_categories, color=[CATEGORY_COLORS.get(c, "auto") for c in inc_categories]),
-            "labels": st.column_config.MultiselectColumn("Labels", options=inc_labels),
-            "amount": st.column_config.NumberColumn("Amount", format="$%d")
+            "date": st.column_config.DateColumn("Fecha", format="YYYY-MM-DD"),
+            "category": st.column_config.MultiselectColumn("Categoría", options=inc_categories, color=[CATEGORY_COLORS.get(c, "auto") for c in inc_categories]),
+            "labels": st.column_config.MultiselectColumn("Etiquetas", options=inc_labels),
+            "amount": st.column_config.NumberColumn("Monto", format="$%d")
         }
     )
     st.write(f"**Subtotal:** ${filt_inc['amount'].sum():,.0f}")

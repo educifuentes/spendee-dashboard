@@ -8,10 +8,10 @@ from helpers.constants.category_and_label_colors import (
 
 st.title("Configuración")
 
-st.subheader("Category Colors")
+st.subheader("Colores de Categoría")
 
 render_category_grid(EXPENSES_CATEGORY_COLORS, INCOME_CATEGORY_COLORS)
 
-st.subheader("Label Colors")
+st.subheader("Colores de Etiqueta")
 
 render_category_grid(LABEL_COLORS, {})

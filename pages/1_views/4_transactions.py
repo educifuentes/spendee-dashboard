@@ -6,7 +6,7 @@ from helpers.misc import st_dataframe_helper
 
 df = exp_transactions()
 
-st.title(":material/receipt_long: Top 50 Expenses")
+st.title(":material/receipt_long: Top 50 Gastos")
 
 expenses_df = df[df["type"] == "Expense"]
 top_50_expenses = expenses_df.sort_values("amount", ascending=False).head(50)

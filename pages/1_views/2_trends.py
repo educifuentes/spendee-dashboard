@@ -16,15 +16,16 @@ df = exp_transactions()
 # last 5 months
 df = df[df["date"] >= df["date"].max() - pd.Timedelta(days=6 * 30)]
 
-st.header("Trends")
-st.markdown("Last 6 months")
-st.info("Data range is from " + df["date"].min().strftime("%Y-%m-%d") + " to " + df["date"].max().strftime("%Y-%m-%d"))
+st.header("Tendencias")
+st.markdown("Últimos 6 meses")
+st.info("Rango de datos es desde " + df["date"].min().strftime("%Y-%m-%d") + " hasta " + df["date"].max().strftime("%Y-%m-%d"))
 
 
 
 granularity = st.selectbox(
-    "Granularity",
+    "Granularidad",
     options=["Month", "Week", "Year"],
+    format_func=lambda x: {"Month": "Mes", "Week": "Semana", "Year": "Año"}[x],
     index=0,
 )
 # ------------------------------------------
