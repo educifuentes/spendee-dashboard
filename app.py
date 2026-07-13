@@ -1,7 +1,7 @@
 import streamlit as st
 
 from helpers.app_version import get_app_version
-
+from helpers.ui_components.navbar import render_custom_navbar
 # ==========================================
 # Page Configuration
 # ==========================================
@@ -9,7 +9,7 @@ st.set_page_config(
     page_title="Spendee Dashboard :material/paid:",
     page_icon=":material/paid:",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Section - Reports
@@ -36,18 +36,12 @@ model_details_page = st.Page("pages/3_dev/model_details.py", title="Model Detail
 
 # current page
 pg = st.navigation({
-    "Reports": [overview_page, trends_page, income_page, config_page],
+    "Reports": [overview_page, trends_page, income_page, transactions_page, config_page],
     "Tools": [explore_page, validations_page, search_page, uploads_page],
     "Dev": [staging_page, intermediate_page, marts_page, exposures_page, catalog_page, model_details_page]
-})
+}, position="hidden")
 
-# Sidebar - Utilities
-with st.sidebar:
-    st.divider()
-    if st.button("Refresh Gsheet Data", icon=":material/refresh:", type="primary", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-    app_version = get_app_version()
-    st.caption(f"App Version: {app_version}")
+# Navbar
+render_custom_navbar()
 
 pg.run()
