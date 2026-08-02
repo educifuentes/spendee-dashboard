@@ -3,6 +3,7 @@ import pandas as pd
 
 from models.exposures.spendee._exp_transactions import exp_transactions
 from models.metrics.spendee._metric_expenses import metric_expenses
+
 from helpers.constants.category_and_label_colors import CATEGORY_COLORS, EXPENSES_CATEGORY_COLORS, INCOME_CATEGORY_COLORS
 from helpers.ui_components.category_grid import render_category_grid
 

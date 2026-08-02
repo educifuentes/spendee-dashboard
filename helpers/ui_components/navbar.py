@@ -36,6 +36,7 @@ def render_custom_navbar():
             st.page_link("pages/1_views/1_overview.py", label="Overview", icon=":material/dashboard:")
             st.page_link("pages/1_views/2_trends.py", label="Trends", icon=":material/trending_up:")
             st.page_link("pages/1_views/3_income.py", label="Ingresos", icon=":material/inventory_2:")
+            st.page_link("pages/1_views/analysis_gastos.py", label="Análisis Gastos", icon=":material/analytics:")
             st.page_link("pages/1_views/4_transactions.py", label="Transacciones", icon=":material/inventory_2:")
             st.page_link("pages/1_views/4_config.py", label="Configuración", icon=":material/settings:")
             

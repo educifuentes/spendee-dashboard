@@ -16,6 +16,7 @@ st.set_page_config(
 overview_page = st.Page("pages/1_views/1_overview.py", title="Overview", icon=":material/dashboard:")
 trends_page = st.Page("pages/1_views/2_trends.py", title="Trends", icon=":material/trending_up:")
 income_page = st.Page("pages/1_views/3_income.py", title="Ingresos", icon=":material/inventory_2:")
+analysis_page = st.Page("pages/1_views/analysis_gastos.py", title="Análisis Gastos", icon=":material/analytics:")
 transactions_page = st.Page("pages/1_views/4_transactions.py", title="Transacciones", icon=":material/inventory_2:")
 config_page = st.Page("pages/1_views/4_config.py", title="Configuración", icon=":material/settings:")
 
@@ -36,7 +37,7 @@ model_details_page = st.Page("pages/3_dev/model_details.py", title="Model Detail
 
 # current page
 pg = st.navigation({
-    "Reports": [overview_page, trends_page, income_page, transactions_page, config_page],
+    "Reports": [overview_page, trends_page, income_page, analysis_page, transactions_page, config_page],
     "Tools": [explore_page, validations_page, search_page, uploads_page],
     "Dev": [staging_page, intermediate_page, marts_page, exposures_page, catalog_page, model_details_page]
 }, position="hidden")
