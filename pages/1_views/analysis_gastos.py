@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from models.marts.spendee._fct_transactions import fct_transactions
+from models.exposures.spendee._exp_transactions import exp_transactions
 from helpers.constants.budgets import BUDGETS, SORT_ORDER
 from helpers.constants.category_and_label_colors import CATEGORY_COLORS
 
@@ -13,8 +13,8 @@ from helpers.constants.category_and_label_colors import CATEGORY_COLORS
 # ==========================================
 @st.cache_data(ttl=600)
 def load_all_transactions():
-    """Load fact transactions and ensure datetime and universal amount."""
-    df = fct_transactions()
+    """Load exposure transactions and ensure datetime and universal amount."""
+    df = exp_transactions()
     if df.empty:
         return df
     
@@ -318,15 +318,15 @@ with tab_table:
     # Build Column Config for st.dataframe
     col_config = {
         "Grupo Presupuesto": st.column_config.TextColumn("Grupo", width="medium"),
-        "Total Anual": st.column_config.NumberColumn("Total Anual", format="$%d"),
-        "Promedio Mes": st.column_config.NumberColumn("Promedio / Mes", format="$%d"),
-        "Mínimo Mes": st.column_config.NumberColumn("Mínimo", format="$%d"),
-        "Máximo Mes": st.column_config.NumberColumn("Máximo", format="$%d"),
+        "Total Anual": st.column_config.NumberColumn("Total Anual", format="dollar", step=1),
+        "Promedio Mes": st.column_config.NumberColumn("Promedio / Mes", format="dollar", step=1),
+        "Mínimo Mes": st.column_config.NumberColumn("Mínimo", format="dollar", step=1),
+        "Máximo Mes": st.column_config.NumberColumn("Máximo", format="dollar", step=1),
         "% del Total": st.column_config.ProgressColumn("% del Total", format="%.1f%%", min_value=0, max_value=100),
-        "Target Mensual": st.column_config.NumberColumn("Target Mensual", format="$%d"),
+        "Target Mensual": st.column_config.NumberColumn("Target Mensual", format="dollar", step=1),
     }
     for col in ordered_cols:
-        col_config[col] = st.column_config.NumberColumn(col, format="$%d")
+        col_config[col] = st.column_config.NumberColumn(col, format="dollar", step=1)
 
     # Column ordering
     cols_to_show = ["Grupo Presupuesto"] + ordered_cols + ["Total Anual", "Promedio Mes", "Mínimo Mes", "Máximo Mes", "% del Total"]
@@ -413,12 +413,12 @@ with tab_compliance:
         hide_index=True,
         column_config={
             "Grupo Presupuesto": st.column_config.TextColumn("Grupo"),
-            "Gasto_Total": st.column_config.NumberColumn("Total Anual", format="$%d"),
-            "Promedio_Mes": st.column_config.NumberColumn("Promedio Mensual Real", format="$%d"),
-            "Target_Total": st.column_config.NumberColumn("Target Mensual Asignado", format="$%d"),
-            "Diferencia": st.column_config.NumberColumn("Diferencia (+/-)", format="$%d"),
+            "Gasto_Total": st.column_config.NumberColumn("Total Anual", format="dollar", step=1),
+            "Promedio_Mes": st.column_config.NumberColumn("Promedio Mensual Real", format="dollar", step=1),
+            "Target_Total": st.column_config.NumberColumn("Target Mensual Asignado", format="dollar", step=1),
+            "Diferencia": st.column_config.NumberColumn("Diferencia (+/-)", format="dollar", step=1),
             "% Uso": st.column_config.ProgressColumn("% Uso Target", format="%.0f%%", min_value=0, max_value=200),
-            "Categorias": st.column_config.NumberColumn("N° Categorías")
+            "Categorias": st.column_config.NumberColumn("N° Categorías", step=1)
         }
     )
 
@@ -432,9 +432,9 @@ with tab_compliance:
         use_container_width=True,
         column_config={
             "Grupo Presupuesto": st.column_config.TextColumn("Grupo"),
-            "Promedio Mes": st.column_config.NumberColumn("Promedio Real / Mes", format="$%d"),
-            "Target Mensual": st.column_config.NumberColumn("Meta / Mes", format="$%d"),
-            "Diferencia": st.column_config.NumberColumn("Diferencia Mensual", format="$%d"),
+            "Promedio Mes": st.column_config.NumberColumn("Promedio Real / Mes", format="dollar", step=1),
+            "Target Mensual": st.column_config.NumberColumn("Meta / Mes", format="dollar", step=1),
+            "Diferencia": st.column_config.NumberColumn("Diferencia Mensual", format="dollar", step=1),
             "% Cumplimiento": st.column_config.NumberColumn("% Gasto vs Meta", format="%.0f%%"),
             "Estado": st.column_config.TextColumn("Estado Presupuestario")
         }
@@ -651,7 +651,7 @@ with tab_drilldown:
             "category": st.column_config.TextColumn("Categoría"),
             "amount": st.column_config.NumberColumn("Monto Original", format="%.2f"),
             "currency": st.column_config.TextColumn("Moneda"),
-            "amount_universal_clp": st.column_config.NumberColumn("Monto CLP", format="$%d"),
+            "amount_universal_clp": st.column_config.NumberColumn("Monto CLP", format="dollar", step=1),
             "wallet": st.column_config.TextColumn("Billetera"),
             "note": st.column_config.TextColumn("Nota"),
             "labels": st.column_config.TextColumn("Etiquetas")
